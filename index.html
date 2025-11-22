@@ -237,34 +237,85 @@ class SoundManager {
     }
 
     startAmbience() {
-        // Create a buffer for Brown Noise (deep rumble)
-        const bufferSize = this.ctx.sampleRate * 5; // 5 seconds
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        let lastOut = 0;
-        for (let i = 0; i < bufferSize; i++) {
-            const white = Math.random() * 2 - 1;
-            data[i] = (lastOut + (0.02 * white)) / 1.02;
-            lastOut = data[i];
-            data[i] *= 3.5; // Compensate for gain loss
-        }
+        const playDroneInstance = () => {
+            if (!this.initialized) return;
 
-        this.ambienceNode = this.ctx.createBufferSource();
-        this.ambienceNode.buffer = buffer;
-        this.ambienceNode.loop = true;
+            // Configuration
+            const playDuration = 15 + Math.random() * 10; // Random duration between 15s and 25s
+            const silenceDuration = 30; // Silence for 30 seconds
+            const now = this.ctx.currentTime;
 
-        // Lowpass filter to make it sound like a distant hum
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 150;
+            // Randomize Tone Parameters
+            // Frequencies: Low A, Low C, Low D, Low E, Low G (Cinematic minor pentatonic)
+            const baseFreqs = [55.00, 65.41, 73.42, 82.41, 48.00]; 
+            const baseFreq = baseFreqs[Math.floor(Math.random() * baseFreqs.length)];
+            const detuneAmount = Math.random() * 15 + 5; // Random detune for texture thickness
+            const filterFreq = 150 + Math.random() * 200; // Random brightness
 
-        const gain = this.ctx.createGain();
-        gain.gain.value = 0.15; // Low volume
+            // Master gain for this drone instance (handles fade in/out)
+            const instanceGain = this.ctx.createGain();
+            instanceGain.connect(this.ctx.destination);
 
-        this.ambienceNode.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-        this.ambienceNode.start();
+            // Envelope: Slow Fade In (4s) -> Sustain -> Slow Fade Out (5s)
+            const fadeIn = 4;
+            const fadeOut = 5;
+            
+            instanceGain.gain.setValueAtTime(0, now);
+            instanceGain.gain.linearRampToValueAtTime(0.15, now + fadeIn); // Fade in to 15% volume
+            instanceGain.gain.setValueAtTime(0.15, now + playDuration - fadeOut);
+            instanceGain.gain.linearRampToValueAtTime(0, now + playDuration); // Fade out to 0
+
+            // Oscillator 1: Deep Foundation (Sine or Triangle)
+            const osc1 = this.ctx.createOscillator();
+            osc1.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+            osc1.frequency.value = baseFreq; 
+            osc1.connect(instanceGain);
+            osc1.start(now);
+            osc1.stop(now + playDuration);
+
+            // Oscillator 2: Detuned Layer (Creates "beating" texture)
+            const osc2 = this.ctx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = baseFreq;
+            osc2.detune.value = detuneAmount; 
+            osc2.connect(instanceGain);
+            osc2.start(now);
+            osc2.stop(now + playDuration);
+
+            // Oscillator 3: Harmonic Texture (Octave up, filtered)
+            const osc3 = this.ctx.createOscillator();
+            osc3.type = 'sawtooth';
+            osc3.frequency.value = baseFreq * 2; // Octave up
+            
+            // Lowpass filter to tame the sawtooth
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = filterFreq; 
+            
+            // LFO to modulate the filter (slow breathing movement)
+            const lfo = this.ctx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.1 + Math.random() * 0.1; // Very slow cycle
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 50; // Modulate filter freq by +/- 50Hz
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+            lfo.start(now);
+            lfo.stop(now + playDuration);
+
+            osc3.connect(filter);
+            filter.connect(instanceGain);
+            osc3.start(now);
+            osc3.stop(now + playDuration);
+
+            // Schedule the next drone after Play Time + Silence Time
+            // The timeout is in milliseconds
+            setTimeout(playDroneInstance, (playDuration + silenceDuration) * 1000);
+        };
+
+        // Start the first loop immediately
+        playDroneInstance();
     }
 
     playShoot(type) {
@@ -280,7 +331,7 @@ class SoundManager {
         osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
 
         // Volume envelope
-        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.setValueAtTime(0.75, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
         osc.connect(gain);
@@ -302,7 +353,7 @@ class SoundManager {
         osc.frequency.setValueAtTime(200, now);
         osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
 
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.75, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
         osc.connect(gain);
