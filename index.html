@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal 2d (demo)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #eee;
+            user-select: none;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            background-color: #222;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: none; /* Hidden by default, shown when paused */
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        #ui.paused {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .pause-menu {
+            background: #333;
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid #555;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            min-width: 400px;
+        }
+
+        h1 { 
+            margin: 0 0 10px 0; 
+            font-size: 32px; 
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        p { margin: 8px 0; font-size: 15px; opacity: 0.9; color: #ccc; }
+        
+        .key {
+            display: inline-block;
+            background: #eee;
+            color: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0 2px;
+            box-shadow: 0 2px 0 #aaa;
+        }
+
+        button {
+            background: #00A2FF;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #33b5ff;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="ui">
+        <div class="pause-menu">
+            <h1>Portal 2d (demo)</h1>
+        <div class="controls">
+            <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to Move & Jump</p>
+
+          
+                <p><span class="key">Q</span> Shoot Blue Portal</p>
+                <p><span class="key">E</span> Shoot Orange Portal</p>
+            <p><span class="key">Space</span> Hold to View Portals</p>
+                <p><span class="key">ESC</span> to Pause/Resume</p>
+            </div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button id="resumeBtn">RESUME</button>
+                <button id="resetBtn">RESET</button>
+            </div>
+        </div>
+    </div>
+    <canvas id="gameCanvas" tabindex="0"></canvas>
+</div>
+
+<script>
+/**
+ * GAME CONFIGURATION & CONSTANTS
+ */
+const CONFIG = {
+    GRAVITY: 0.2,         
+    MOVE_SPEED: 3,         
+    MAX_SPEED: 25,         
+    // Velocity-dependent control parameters
+    // "Retention" = velocity multiplier per frame (1.0 = no friction, 0.0 = instant stop)
+    HIGH_SPEED_GROUND_RETENTION: 0.98,  // High speed -> Slidey (retain most speed)
+    LOW_SPEED_GROUND_RETENTION: 0.70,   // Low speed -> Grippy/Snappy (stop fast)
+    
+    MIN_AIR_ACCEL: 0.05,        // Air accel at high speed (less control)
+    MAX_AIR_ACCEL: 0.2,         // Air accel at low speed (lots of control)
+    JUMP_FORCE: 8,
+    SUBSTEPS: 16, 
+    PORTAL_WIDTH: 60,
+    PLAYER_SIZE: 24,
+    PORTAL_ANCHOR_DISTANCE: 20,  // Distance from player center to portal emission point
+    ZOOM: 1.5,             
+    CAM_LERP: 0.1,         
+    CAM_LOOKAHEAD: 0.3,
+    PORTAL_REDIRECT: 1.0,  // 0.0 = physics accurate, 1.0 = always straight out
+    PORTAL_SUCTION: 0,   // Base strength of high-speed alignment force
+    PORTAL_SUCTION_SPEED_SCALE: 0.0,  // How much suction scales with speed (0 = no scaling, higher = more scaling)
+    PORTAL_SUCTION_PREDICT_TIME: 1.0,  // How far ahead (seconds) to predict player position
+    
+    // Control Lock Parameters
+    MAX_CONTROL_LOCK_TIME: 0.5, // Max seconds to disable input after teleport (at low speed)
+    CONTROL_LOCK_SPEED_THRESHOLD: 4 // Speed at which control lock becomes 0 (linear scaling)
+};
+
+// World Dimensions
+const WORLD_W = 1920; 
+const WORLD_H = 1080;
+
+/**
+ * UTILITIES & MATH
+ */
+class Vec2 {
+    constructor(x, y) { this.x = x; this.y = y; }
+    add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+    sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+    mult(s) { return new Vec2(this.x * s, this.y * s); }
+    mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+    normalize() {
+        let m = this.mag();
+        return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m);
+    }
+    rotate(angle) {
+        return new Vec2(
+            this.x * Math.cos(angle) - this.y * Math.sin(angle),
+            this.x * Math.sin(angle) + this.y * Math.cos(angle)
+        );
+    }
+    dot(v) { return this.x * v.x + this.y * v.y; }
+}
+
+function rectIntersect(r1, r2) {
+    return !(r2.x > r1.x + r1.w || 
+             r2.x + r2.w < r1.x || 
+             r2.y > r1.y + r1.h || 
+             r2.y + r2.h < r1.y);
+}
+
+function castRay(start, dir, walls) {
+    let closest = null;
+    let minDist = Infinity;
+    let hitNormal = null;
+    let end = start.add(dir.mult(3000)); 
+
+    for (let wall of walls) {
+        const lines = [
+            { p1: new Vec2(wall.x, wall.y), p2: new Vec2(wall.x + wall.w, wall.y), n: new Vec2(0, -1) },
+            { p1: new Vec2(wall.x, wall.y + wall.h), p2: new Vec2(wall.x + wall.w, wall.y + wall.h), n: new Vec2(0, 1) },
+            { p1: new Vec2(wall.x, wall.y), p2: new Vec2(wall.x, wall.y + wall.h), n: new Vec2(-1, 0) },
+            { p1: new Vec2(wall.x + wall.w, wall.y), p2: new Vec2(wall.x + wall.w, wall.y + wall.h), n: new Vec2(1, 0) }
+        ];
+
+        for (let line of lines) {
+            const x1 = line.p1.x, y1 = line.p1.y;
+            const x2 = line.p2.x, y2 = line.p2.y;
+            const x3 = start.x, y3 = start.y;
+            const x4 = end.x, y4 = end.y;
+
+            const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            if (den === 0) continue;
+
+            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                const hitX = x1 + t * (x2 - x1);
+                const hitY = y1 + t * (y2 - y1);
+                const dist = Math.sqrt((hitX - start.x) ** 2 + (hitY - start.y) ** 2);
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = new Vec2(hitX, hitY);
+                    hitNormal = line.n;
+                }
+            }
+        }
+    }
+    return closest ? { pos: closest, normal: hitNormal, dist: minDist } : null;
+}
+
+/**
+ * GAME CLASSES
+ */
+
+class Camera {
+    constructor(x, y) {
+        this.pos = new Vec2(x, y);
+        this.lerpedPlayerPos = new Vec2(x, y); // Smoothly tracked player position
+        const scaleFactor = canvas.height / WORLD_H;
+        this.zoom = CONFIG.ZOOM * scaleFactor;
+    }
+
+    follow(playerPos, screenMouse, canvas, ghostData, portals, isSpaceHeld) {
+        // Smoothly lerp the player position to reduce jarring teleport transitions
+        const playerLerp = 0.15; // Lower = smoother but slower response
+        this.lerpedPlayerPos.x += (playerPos.x - this.lerpedPlayerPos.x) * playerLerp;
+        this.lerpedPlayerPos.y += (playerPos.y - this.lerpedPlayerPos.y) * playerLerp;
+        
+        let targetX, targetY;
+        
+        const scaleFactor = canvas.height / WORLD_H;
+        let targetZoom = CONFIG.ZOOM * scaleFactor;
+
+        // --- MODE 1: PORTAL OVERVIEW ---
+        if (isSpaceHeld && portals && portals[0].active && portals[1].active) {
+            const p1 = portals[0].pos;
+            const p2 = portals[1].pos;
+
+            targetX = (p1.x + p2.x) / 2;
+            targetY = (p1.y + p2.y) / 2;
+
+            // Calculate bounds including portal width and a small margin
+            const portalWidth = CONFIG.PORTAL_WIDTH;
+            const margin = 50; // Small padding around portals
+            // Ensure minimum bounds so we don't zoom in too much when portals are close
+            const minBounds = 200;
+            const boundsW = Math.max(minBounds, Math.abs(p1.x - p2.x) + portalWidth + margin * 2);
+            const boundsH = Math.max(minBounds, Math.abs(p1.y - p2.y) + portalWidth + margin * 2);
+
+            // Calculate zoom needed to fit both portals
+            const zoomX = canvas.width / boundsW;
+            const zoomY = canvas.height / boundsH;
+
+            const maxZ = CONFIG.ZOOM * scaleFactor;
+            const minZ = 0.5 * scaleFactor;
+            // Use the smaller zoom to ensure both portals fit
+            targetZoom = Math.max(minZ, Math.min(maxZ, Math.min(zoomX, zoomY)));
+
+        } 
+        // --- MODE 2: PLAYER TRACKING ---
+        else {
+            let centerX = canvas.width / 2;
+            let centerY = canvas.height / 2;
+            
+            let offX = (screenMouse.x - centerX) / this.zoom;
+            let offY = (screenMouse.y - centerY) / this.zoom;
+
+            // [FIXED] Strong Vertical Compensation
+            // Aspect Ratio (1.77) equalizes screen pixels.
+            // Multiplied by 2.2 to allow the camera to overcome the player's anchor weight
+            // and world clamping limits more easily.
+            const aspect = canvas.width / canvas.height;
+            offY *= aspect * 2.2;
+
+            let mouseWorldX = this.pos.x + offX;
+            let mouseWorldY = this.pos.y + offY;
+
+            const look = CONFIG.CAM_LOOKAHEAD;
+            const wPlayer = 1.0 - look;
+            const wMouse = look;
+            
+            let wGhost = 0;
+            let ghostX = 0;
+            let ghostY = 0;
+
+
+            const totalWeight = wPlayer + wMouse + wGhost;
+
+            // Use lerped player position for smoother camera tracking
+            targetX = (this.lerpedPlayerPos.x * wPlayer + mouseWorldX * wMouse + ghostX * wGhost) / totalWeight;
+            targetY = (this.lerpedPlayerPos.y * wPlayer + mouseWorldY * wMouse + ghostY * wGhost) / totalWeight;
+        }
+
+        // --- SMOOTH TRANSITIONS ---
+        this.pos.x += (targetX - this.pos.x) * CONFIG.CAM_LERP;
+        this.pos.y += (targetY - this.pos.y) * CONFIG.CAM_LERP;
+        this.zoom += (targetZoom - this.zoom) * 0.05;
+
+        // --- CLAMP TO WORLD ---
+        let viewH_W = (canvas.width / this.zoom) / 2;
+        let viewH_H = (canvas.height / this.zoom) / 2;
+        
+        this.pos.x = Math.max(viewH_W, Math.min(WORLD_W - viewH_W, this.pos.x));
+        this.pos.y = Math.max(viewH_H, Math.min(WORLD_H - viewH_H, this.pos.y));
+    }
+    
+    apply(ctx, canvas) {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(this.zoom, this.zoom);
+        ctx.translate(-this.pos.x, -this.pos.y);
+    }
+
+    screenToWorld(screenPos, canvas) {
+        let centerX = canvas.width / 2;
+        let centerY = canvas.height / 2;
+        return new Vec2(
+            (screenPos.x - centerX) / this.zoom + this.pos.x,
+            (screenPos.y - centerY) / this.zoom + this.pos.y
+        );
+    }
+}
+
+class Portal {
+    constructor(id, color) {
+        this.id = id;
+        this.color = color;
+        this.active = false;
+        this.pos = new Vec2(0, 0);
+        this.normal = new Vec2(0, 0);
+        this.width = CONFIG.PORTAL_WIDTH;
+    }
+
+    place(pos, normal) {
+        this.active = true;
+        this.pos = pos;
+        this.normal = normal;
+    }
+    
+    getAngle() {
+        return Math.atan2(this.normal.y, this.normal.x);
+    }
+}
+
+class Player {
+    constructor(x, y) {
+        this.pos = new Vec2(x, y);
+        this.vel = new Vec2(0, 0);
+        this.size = CONFIG.PLAYER_SIZE;
+        this.grounded = false;
+        this.portalCooldown = 0;
+        this.controlLockTimer = 0; // Timer to disable input after teleport
+    }
+
+    getCenter() {
+        return new Vec2(this.pos.x + this.size / 2, this.pos.y + this.size / 2);
+    }
+    
+    getGhostPos(portals) {
+        if (!portals || !portals[0].active || !portals[1].active) return null;
+        
+        const center = this.getCenter();
+        let nearPortal = null;
+        let destPortal = null;
+        let dist = 0;
+
+        const detectionRadius = 450; 
+
+        const dist0 = center.sub(portals[0].pos).mag();
+        const dist1 = center.sub(portals[1].pos).mag();
+
+        if (dist0 < detectionRadius) {
+            nearPortal = portals[0];
+            destPortal = portals[1];
+            dist = dist0;
+        } else if (dist1 < detectionRadius) {
+            nearPortal = portals[1];
+            destPortal = portals[0];
+            dist = dist1;
+        }
+
+        if (nearPortal && destPortal) {
+            // Use the same transformation as teleportation for consistency
+            const tangentIn = new Vec2(-nearPortal.normal.y, nearPortal.normal.x);
+            const tangentOut = new Vec2(-destPortal.normal.y, destPortal.normal.x);
+            let offsetV = center.sub(nearPortal.pos);
+            
+            // Decompose offset into normal and tangent components
+            const offsetAlongNormal = offsetV.dot(nearPortal.normal);
+            const offsetAlongTangent = offsetV.dot(tangentIn);
+            
+            // Reconstruct: flip normal component, use exit portal's tangent
+            const newOffsetNormal = destPortal.normal.mult(-offsetAlongNormal);
+            const newOffsetTangent = tangentOut.mult(offsetAlongTangent);
+            
+            let newOffset = newOffsetNormal.add(newOffsetTangent);
+            
+            let strength = Math.max(0, 1 - (dist / detectionRadius));
+            strength = strength * strength; 
+
+            return { 
+                pos: destPortal.pos.add(newOffset), 
+                strength: strength 
+            };
+        }
+        return null;
+    }
+
+    update(input, walls, portals) {
+        // Store velocity before applying walking forces
+        const velBeforeWalking = new Vec2(this.vel.x, this.vel.y);
+        
+        // Handle control lock timer
+        if (this.controlLockTimer > 0) {
+            this.controlLockTimer--;
+        }
+
+        let wishDir = 0;
+        // Only allow movement input if control is not locked
+        if (this.controlLockTimer <= 0) {
+        if (input.keys['a']) wishDir -= 1;
+        if (input.keys['d']) wishDir += 1;
+        }
+
+        // Calculate velocity-dependent friction and control
+        const absVelX = Math.abs(this.vel.x);
+        const velRatio = Math.min(1.0, absVelX / CONFIG.MAX_SPEED); // 0 = stopped, 1 = max speed
+        
+        // Ground friction (Retention): 
+        // Low speed = Low retention (grippy/stops fast)
+        // High speed = High retention (slidey/keeps moving)
+        let groundRetention;
+        if (this.grounded) {
+            // Interpolate between LOW_RETENTION (at low speed) and HIGH_RETENTION (at high speed)
+            groundRetention = CONFIG.LOW_SPEED_GROUND_RETENTION + 
+                           (CONFIG.HIGH_SPEED_GROUND_RETENTION - CONFIG.LOW_SPEED_GROUND_RETENTION) * velRatio;
+        }
+        
+        // Always apply ground friction (retention) if grounded
+        // This ensures we don't slide forever after being flung
+        if (this.grounded) {
+            this.vel.x *= groundRetention;
+        }
+        // No air friction when not walking - other forces (portals, etc.) are unaffected
+        
+        this.vel.y += CONFIG.GRAVITY;
+
+        if (wishDir !== 0) {
+            // Calculate acceleration needed to reach max speed in defined time
+            // Note: With strong friction, we need higher acceleration to move
+            // Equilibrium speed = accel / (1 - retention)
+            // accel = speed * (1 - retention)
+            // We use LOW_SPEED_GROUND_RETENTION as the baseline for normal walking
+            const baseRetention = CONFIG.LOW_SPEED_GROUND_RETENTION;
+            const groundAccel = CONFIG.MOVE_SPEED * (1 - baseRetention);
+            
+            // Air acceleration: low speed = high accel (lots of control), high speed = low accel (less control)
+            let airAccel;
+            if (!this.grounded) {
+                // Interpolate between MAX (at low speed) and MIN (at high speed)
+                airAccel = CONFIG.MAX_AIR_ACCEL - 
+                          (CONFIG.MAX_AIR_ACCEL - CONFIG.MIN_AIR_ACCEL) * velRatio;
+            }
+            
+            const currentAccel = this.grounded ? groundAccel : airAccel;
+            const maxMove = CONFIG.MOVE_SPEED;
+            let currentSpeed = this.vel.x * wishDir;
+            let addSpeed = maxMove - currentSpeed;
+            if (addSpeed > 0) {
+                let accelMagnitude = Math.min(currentAccel, addSpeed);
+                this.vel.x += accelMagnitude * wishDir;
+                
+                // Air friction is now handled by velocity-dependent air accel above
+                // No need for separate air friction application
+            }
+        }
+        
+        if (input.keys['w'] && this.grounded) {
+            this.vel.y = -CONFIG.JUMP_FORCE;
+            this.grounded = false;
+        }
+        
+        this.vel.x = Math.max(-CONFIG.MAX_SPEED, Math.min(CONFIG.MAX_SPEED, this.vel.x));
+        this.vel.y = Math.max(-CONFIG.MAX_SPEED, Math.min(CONFIG.MAX_SPEED, this.vel.y));
+
+        if (this.portalCooldown > 0) this.portalCooldown--;
+        this.grounded = false;
+
+        const dt = 1 / CONFIG.SUBSTEPS;
+        for (let i = 0; i < CONFIG.SUBSTEPS; i++) {
+            this.pos.x += this.vel.x * dt;
+            this.pos.y += this.vel.y * dt;
+            this.handlePortals(portals);
+            this.handleCollisions(walls, portals);
+        }
+    }
+
+    handleCollisions(walls, portals) {
+        for (let wall of walls) {
+            let ignoreWall = false;
+            if (portals) {
+                for (let p of portals) {
+                    if (!p.active) continue;
+                    // Note: We DO NOT check portalCooldown here. 
+                    // We need to ignore the wall even (and especially) when just teleported
+                    // to prevent being pushed back into the portal or stuck in the wall.
+                    
+                    const center = this.getCenter();
+                    const rel = center.sub(p.pos);
+                    const tangent = new Vec2(-p.normal.y, p.normal.x);
+                    const distTangent = rel.dot(tangent);
+                    
+                    if (Math.abs(distTangent) < p.width / 2) {
+                         if (rel.mag() < this.size * 2) {
+                            if (p.pos.x >= wall.x - 1 && p.pos.x <= wall.x + wall.w + 1 &&
+                                p.pos.y >= wall.y - 1 && p.pos.y <= wall.y + wall.h + 1) {
+                                ignoreWall = true;
+                                break;
+                            }
+                         }
+                    }
+                }
+            }
+
+            if (ignoreWall) continue;
+
+            if (this.pos.x < wall.x + wall.w &&
+                this.pos.x + this.size > wall.x &&
+                this.pos.y < wall.y + wall.h &&
+                this.pos.y + this.size > wall.y) {
+
+                let overlapX1 = (wall.x + wall.w) - this.pos.x;
+                let overlapX2 = (this.pos.x + this.size) - wall.x;
+                let overlapY1 = (wall.y + wall.h) - this.pos.y;
+                let overlapY2 = (this.pos.y + this.size) - wall.y;
+                let minOverlap = Math.min(overlapX1, overlapX2, overlapY1, overlapY2);
+
+                if (minOverlap === overlapY1) {
+                    this.pos.y = wall.y + wall.h;
+                    this.vel.y = 0;
+                } else if (minOverlap === overlapY2) {
+                    this.pos.y = wall.y - this.size;
+                    this.vel.y = 0;
+                    this.grounded = true;
+                } else if (minOverlap === overlapX1) {
+                    this.pos.x = wall.x + wall.w;
+                    this.vel.x = 0;
+                } else if (minOverlap === overlapX2) {
+                    this.pos.x = wall.x - this.size;
+                    this.vel.x = 0;
+                }
+            }
+        }
+    }
+
+    handlePortals(portals) {
+        if (this.portalCooldown > 0) return;
+        const p1 = portals[0];
+        const p2 = portals[1];
+        if (!p1.active || !p2.active) return;
+        
+        this.applyPortalSuction(p1);
+        this.applyPortalSuction(p2);
+        
+        this.checkPortalIntersection(p1, p2);
+        this.checkPortalIntersection(p2, p1);
+    }
+
+    applyPortalSuction(portal) {
+        const center = this.getCenter();
+        const speed = this.vel.mag();
+
+        // Suction parameters
+        const MIN_SPEED = 5;        // Minimum speed to activate (very low threshold)
+        const SUCTION_RANGE = 150;  // Activation distance
+
+        if (speed < MIN_SPEED) return;
+
+        // PREDICTIVE ONLY: Calculate where player will be in the future
+        const predictTime = CONFIG.PORTAL_SUCTION_PREDICT_TIME;
+        const predictedPos = center.add(this.vel.mult(predictTime * 60)); // 60 = approximate fps
+        const predictedDist = predictedPos.sub(portal.pos).mag();
+        
+        // Only proceed if PREDICTED position will be near the portal
+        if (predictedDist >= SUCTION_RANGE) return;
+        
+        // Check if player is on the correct side of the portal (in front of it)
+        // Portal normal points outward, so player should be opposite to normal
+        const toPortal = center.sub(portal.pos);
+        const distNormal = toPortal.dot(portal.normal);
+        
+        // Player must be in front of portal (opposite side from normal)
+        // For floor portal (normal up), player must be above (distNormal < 0)
+        if (distNormal >= 0) return; // Player is behind or on wrong side of portal
+        
+        // Check if velocity is aligned with portal's approach direction
+        // Portal normal points outward, so we want velocity pointing opposite (towards portal)
+        const velAlongNormal = this.vel.dot(portal.normal);
+        
+        // Only activate if:
+        // 1. Velocity has significant component opposite to normal (approaching from front)
+        // 2. This component is a significant portion of total speed (not just grazing past)
+        const MIN_ALIGNMENT = 0.3; // At least 30% of velocity must be aligned with approach
+        const alignmentRatio = -velAlongNormal / speed; // Negative because we want opposite direction
+        
+        if (alignmentRatio > MIN_ALIGNMENT) {
+            // Calculate how far off-center we will be relative to the portal's face
+            const tangent = new Vec2(-portal.normal.y, portal.normal.x);
+            const offsetTangent = predictedPos.sub(portal.pos).dot(tangent);
+            
+            // Apply a correction force along the tangent to align with center
+            // We gently nudge velocity towards the center axis
+            const correctionDir = tangent.mult(-Math.sign(offsetTangent));
+            
+            // Strength scales with:
+            // - Proximity (how close predicted position is to portal)
+            // - Alignment quality (how well aligned with portal approach)
+            // - Speed (faster = more suction needed, controlled by PORTAL_SUCTION_SPEED_SCALE)
+            const proximityFactor = (1 - (predictedDist / SUCTION_RANGE)) ** 2; // Quadratic falloff
+            const alignmentFactor = Math.min(1.0, alignmentRatio / 0.7); // Scale up to 0.7 alignment
+            
+            // Speed-based scaling: slow = minimal/zero, fast = strong
+            // PORTAL_SUCTION_SPEED_SCALE controls how much speed affects suction
+            // At speed 0: speedFactor = 0 (no suction)
+            // At higher speeds: speedFactor increases linearly with speed
+            // Formula ensures no base suction - only scales with actual speed
+            const speedFactor = speed * CONFIG.PORTAL_SUCTION_SPEED_SCALE;
+            
+            const suctionForce = CONFIG.PORTAL_SUCTION * proximityFactor * alignmentFactor * speedFactor;
+            
+            // Apply smooth velocity adjustment
+            this.vel = this.vel.add(correctionDir.mult(suctionForce));
+        }
+    }
+
+    checkPortalIntersection(inPortal, outPortal) {
+        const playerCenter = this.getCenter();
+        const toPlayer = playerCenter.sub(inPortal.pos);
+        const tangent = new Vec2(-inPortal.normal.y, inPortal.normal.x); 
+        const distNormal = toPlayer.dot(inPortal.normal);
+        const distTangent = toPlayer.dot(tangent);
+
+        if (Math.abs(distTangent) < inPortal.width / 2) {
+            const prevPos = this.pos.sub(this.vel.mult(1/CONFIG.SUBSTEPS));
+            const prevCenter = new Vec2(prevPos.x + this.size/2, prevPos.y + this.size/2);
+            const prevDistNormal = prevCenter.sub(inPortal.pos).dot(inPortal.normal);
+
+            if (prevDistNormal > 0 && distNormal <= 0) {
+                this.teleport(inPortal, outPortal);
+            }
+        }
+    }
+
+    teleport(inPortal, outPortal) {
+        // Transform velocity: decompose into normal and tangent components
+        // Normal component (perpendicular to portal): always flipped
+        // Tangent component (parallel to portal): rotated to match exit portal
+        const tangentIn = new Vec2(-inPortal.normal.y, inPortal.normal.x);
+        const tangentOut = new Vec2(-outPortal.normal.y, outPortal.normal.x);
+        
+        // Decompose velocity
+        const velAlongNormal = this.vel.dot(inPortal.normal);
+        const velAlongTangent = this.vel.dot(tangentIn);
+        
+        // Reconstruct: flip normal component, rotate tangent component
+        // The tangent needs to be expressed in exit portal's tangent direction
+        const newVelNormal = outPortal.normal.mult(-velAlongNormal);
+        
+        // Apply "straightening" redirection
+        // We reduce the tangent component to steer the player more towards the normal
+        // 0.0 = full tangent (physics), 1.0 = no tangent (straight out)
+        const redirectFactor = CONFIG.PORTAL_REDIRECT;
+        const newVelTangent = tangentOut.mult(velAlongTangent * (1.0 - redirectFactor));
+        
+        // Combine normal and tangent components
+        // Note: We do NOT re-normalize to original speed here. 
+        // If PORTAL_REDIRECT reduces the tangent component, that energy is lost.
+        // This prevents "gaining" vertical height by converting horizontal speed into vertical speed.
+        let exitVel = newVelNormal.add(newVelTangent);
+        
+        this.vel = exitVel;
+
+        let playerCenter = this.getCenter();
+        let offsetV = playerCenter.sub(inPortal.pos);
+        
+        offsetV = offsetV.mult(0.2);
+        
+        // Transform offset using the same logic as velocity
+        const offsetAlongNormal = offsetV.dot(inPortal.normal);
+        const offsetAlongTangent = offsetV.dot(tangentIn);
+        const newOffsetNormal = outPortal.normal.mult(-offsetAlongNormal);
+        const newOffsetTangent = tangentOut.mult(offsetAlongTangent);
+        let newOffset = newOffsetNormal.add(newOffsetTangent);
+        // let nudge = outPortal.normal.mult(this.size / 2 + 2); // No longer nudging
+
+        const currentSpeedSq = this.vel.mag() ** 2;
+        // Energy correction was based on nudge height change. Since we spawn in place, 
+        // potential energy change is handled naturally by physics in the next frame?
+        // Or we assume the teleport is instantaneous displacement.
+        // If we don't nudge, energyCorrection is 0.
+        const energyCorrection = 0; 
+        let newSpeedSq = currentSpeedSq + energyCorrection;
+        if (newSpeedSq < 0) newSpeedSq = 0;
+        const newSpeed = Math.sqrt(newSpeedSq);
+        if (this.vel.mag() > 0) {
+             this.vel = this.vel.normalize().mult(newSpeed);
+        }
+        
+        // Ensure minimum exit velocity to prevent getting stuck, but don't boost unnecessarily
+        // Use a value slightly less than walk speed (3)
+        const minExitSpeed = 3; 
+        if (this.vel.mag() < minExitSpeed) {
+            this.vel = outPortal.normal.mult(minExitSpeed);
+        }
+        
+        // Spawn at the portal center (offset relative to entry), without nudging out
+        // Since we ignore collision for the portal's wall, this is safe and seamless
+        let newCenter = outPortal.pos.add(newOffset);
+        
+        // Safety check: prevent teleporting to invalid coordinates (NaN/Infinity)
+        if (!isFinite(newCenter.x) || !isFinite(newCenter.y)) {
+            return;
+        }
+        
+        this.pos.x = newCenter.x - this.size/2;
+        this.pos.y = newCenter.y - this.size/2;
+        this.portalCooldown = 2;
+        
+        // Scale control lock based on velocity
+        // Slow speed = full lock (0.5s), High speed = no lock (0s)
+        // This forces player to rely on momentum when exiting slowly, but allows air strafing when fast
+        const currentSpeed = this.vel.mag();
+        const speedFactor = Math.max(0, 1.0 - (currentSpeed / CONFIG.CONTROL_LOCK_SPEED_THRESHOLD));
+        const lockTime = CONFIG.MAX_CONTROL_LOCK_TIME * speedFactor;
+        
+        this.controlLockTimer = Math.floor(lockTime * 60); // Convert seconds to frames (60fps)
+    }
+
+    draw(ctx, portals) {
+        this.drawBody(ctx, this.pos.x, this.pos.y);
+
+        const ghostData = this.getGhostPos(portals);
+        if (ghostData) {
+            ctx.save();
+            let visOpacity = Math.max(0, (ghostData.strength - 0.7) * 3.33);
+            if (visOpacity > 0) {
+                ctx.globalAlpha = 0.6 * visOpacity;
+                this.drawBody(ctx, ghostData.pos.x - this.size/2, ghostData.pos.y - this.size/2);
+            }
+            ctx.restore();
+        }
+    }
+
+    drawBody(ctx, x, y) {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, y, this.size, this.size);
+        ctx.fillStyle = '#000';
+        let lookDir = this.vel.mag() > 1 ? this.vel.normalize() : new Vec2(1, 0);
+        ctx.fillRect(x + this.size/2 + lookDir.x * 6 - 2, y + this.size/2 + lookDir.y * 6 - 2, 4, 4);
+    }
+}
+
+/**
+ * MAIN GAME LOOP & STATE
+ */
+const canvas = document.getElementById('gameCanvas');
+const container = document.getElementById('game-container');
+const ctx = canvas.getContext('2d');
+
+let width, height;
+const input = {
+    keys: {},
+    screenMouse: new Vec2(0, 0)
+};
+
+let player, camera;
+let walls = [];
+let portals = [];
+let particles = [];
+let bullets = [];
+let isPaused = false;
+
+class Bullet {
+    constructor(startPos, dir, color, portalId) {
+        this.pos = startPos;
+        this.vel = dir.mult(40); // High speed
+        this.color = color;
+        this.portalId = portalId;
+        this.life = 100; // Failsafe
+        this.trail = [];
+        this.trailLength = 5;
+    }
+
+    update(walls) {
+        this.life--;
+        if (this.life <= 0) return false;
+
+        // Update trail
+        this.trail.unshift(new Vec2(this.pos.x, this.pos.y));
+        if (this.trail.length > this.trailLength) {
+            this.trail.pop();
+        }
+
+        // Move and check collision
+        const nextPos = this.pos.add(this.vel);
+        const hit = castRay(this.pos, this.vel.normalize(), walls);
+        
+        // Check if we hit something in this frame
+        if (hit) {
+            const distToHit = Math.sqrt(Math.pow(hit.pos.x - this.pos.x, 2) + Math.pow(hit.pos.y - this.pos.y, 2));
+            const distToNext = this.vel.mag();
+            
+            if (distToHit <= distToNext) {
+                // Hit wall!
+                createPortal(this.portalId, hit.pos, hit.normal);
+                
+                // Spawn particles
+                for (let i = 0; i < 10; i++) {
+                    particles.push({
+                        pos: hit.pos.add(hit.normal.mult(2)),
+                        vel: new Vec2((Math.random() - 0.5) * 5 + hit.normal.x * 5, (Math.random() - 0.5) * 5 + hit.normal.y * 5),
+                        life: 30, // Lasts 0.5 seconds
+                        color: this.color
+                    });
+                }
+                return false; // Destroy bullet
+            }
+        }
+
+        this.pos = nextPos;
+        return true;
+    }
+
+    draw(ctx) {
+        // Draw trail
+        if (this.trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0].x, this.trail[0].y);
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x, this.trail[i].y);
+            }
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.globalAlpha = 0.6;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Draw head
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function createPortal(id, pos, normal) {
+    // Existing portal creation logic moved here
+    portals[id].active = true;
+    portals[id].pos = pos;
+    portals[id].normal = normal;
+    portals[id].width = CONFIG.PORTAL_WIDTH; // Always set width to full size
+    
+    // Adjust position to be on the wall surface (prevent slight clipping)
+    // Logic previously in shootPortal
+    // Note: We don't need to set height or adjust width based on orientation 
+    // because width is used as the "length" of the portal in draw/collision
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    const ui = document.getElementById('ui');
+    if (isPaused) {
+        ui.classList.add('paused');
+    } else {
+        ui.classList.remove('paused');
+    }
+}
+
+function resize() {
+    const aspect = 16 / 9;
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    
+    if (w / h > aspect) {
+        w = h * aspect;
+    } else {
+        h = w / aspect;
+    }
+    
+    container.style.width = w + 'px';
+    container.style.height = h + 'px';
+    canvas.width = w;
+    canvas.height = h;
+}
+
+function resetLevel() {
+    player = new Player(300, WORLD_H - 100);
+    camera = new Camera(player.pos.x, player.pos.y); 
+    portals = [new Portal(0, '#00A2FF'), new Portal(1, '#FF9900')];
+    
+    walls = [
+        {x: 0, y: 0, w: WORLD_W, h: 40}, 
+        {x: 0, y: WORLD_H-40, w: WORLD_W, h: 40}, 
+        {x: 0, y: 0, w: 40, h: WORLD_H}, 
+        {x: WORLD_W-40, y: 0, w: 40, h: WORLD_H}, 
+        
+        {x: 200, y: WORLD_H - 250, w: 200, h: 20},
+        {x: 700, y: WORLD_H - 500, w: 40, h: 500},
+        {x: 800, y: 300, w: 400, h: 40},
+        {x: 150, y: 400, w: 150, h: 20},
+        
+        {x: WORLD_W - 400, y: WORLD_H - 150, w: 60, h: 110},
+        {x: WORLD_W - 340, y: WORLD_H - 250, w: 60, h: 210},
+        {x: WORLD_W - 280, y: WORLD_H - 350, w: 60, h: 310},
+    ];
+}
+
+function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    
+    window.addEventListener('keydown', e => {
+        const key = e.key.toLowerCase();
+        if (key === 'escape') {
+            // Try to prevent default (won't work for fullscreen exit due to browser security)
+            e.preventDefault();
+            e.stopPropagation();
+            togglePause();
+            return;
+        }
+        
+        if (!isPaused) {
+            if (key === 'q') shootPortal(0);
+            if (key === 'e') shootPortal(1);
+        }
+        
+        input.keys[key] = true;
+    });
+    window.addEventListener('keyup', e => input.keys[e.key.toLowerCase()] = false);
+    window.addEventListener('blur', () => {
+        input.keys = {};
+        // Auto-pause removed
+    });
+
+    window.addEventListener('mousemove', e => {
+        if (isPaused) return;
+        const rect = canvas.getBoundingClientRect();
+        let mx = e.clientX - rect.left;
+        let my = e.clientY - rect.top;
+        // Clamp to canvas dimensions to avoid black bar drift
+        input.screenMouse.x = Math.max(0, Math.min(canvas.width, mx));
+        input.screenMouse.y = Math.max(0, Math.min(canvas.height, my));
+    });
+    
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.getElementById('resumeBtn').addEventListener('click', () => {
+        if (isPaused) togglePause();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        resetLevel();
+        if (isPaused) togglePause(); // Resume game after reset
+    });
+
+    resetLevel();
+    // Start game without pausing
+    requestAnimationFrame(loop);
+}
+
+function isPointInWall(point, walls) {
+    for (let wall of walls) {
+        if (point.x >= wall.x && point.x <= wall.x + wall.w &&
+            point.y >= wall.y && point.y <= wall.y + wall.h) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function shootPortal(id) {
+    const worldMouse = camera.screenToWorld(input.screenMouse, canvas);
+    const playerCenter = new Vec2(player.pos.x + player.size/2, player.pos.y + player.size/2);
+    
+    // Calculate direction from player to mouse
+    const dir = worldMouse.sub(playerCenter).normalize();
+    
+    // Calculate anchor point offset from player center in direction of mouse
+    let anchorPoint = playerCenter.add(dir.mult(CONFIG.PORTAL_ANCHOR_DISTANCE));
+    
+    // If anchor point is inside a wall, use player center instead
+    if (isPointInWall(anchorPoint, walls)) {
+        anchorPoint = playerCenter;
+    }
+    
+    // Spawn Bullet
+    bullets.push(new Bullet(anchorPoint, dir, portals[id].color, id));
+}
+
+function update() {
+    if (isPaused) return;
+    
+    player.update(input, walls, portals);
+    const ghostData = player.getGhostPos(portals);
+    camera.follow(player.getCenter(), input.screenMouse, canvas, ghostData, portals, input.keys[' ']);
+    
+    // Update bullets
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        if (!bullets[i].update(walls)) {
+            bullets.splice(i, 1);
+        }
+    }
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.pos = p.pos.add(p.vel);
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function drawPortalPreview(ctx, pos, normal) {
+    // Draw a clean, simple portal preview
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    const angle = Math.atan2(normal.y, normal.x);
+    ctx.rotate(angle);
+    
+    // Simple clean outline
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, -CONFIG.PORTAL_WIDTH/2, 3, CONFIG.PORTAL_WIDTH);
+    
+    ctx.restore();
+}
+
+function draw() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    
+    camera.apply(ctx, canvas);
+
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+    
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let x=0; x<=WORLD_W; x+=100) { ctx.moveTo(x,0); ctx.lineTo(x, WORLD_H); }
+    for(let y=0; y<=WORLD_H; y+=100) { ctx.moveTo(0,y); ctx.lineTo(WORLD_W, y); }
+    ctx.stroke();
+    
+    ctx.fillStyle = '#444';
+    for (let w of walls) {
+        ctx.fillRect(w.x, w.y, w.w, w.h);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(w.x, w.y, w.w, w.h);
+    }
+    
+    for (let p of portals) {
+        if (p.active) {
+            ctx.save();
+            ctx.translate(p.pos.x, p.pos.y);
+            ctx.rotate(p.getAngle());
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(0, -p.width/2, 4, p.width); 
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-2, -p.width/2 + 2, 2, p.width - 4);
+            ctx.restore();
+        }
+    }
+    
+    // Draw bullets
+    for (let bullet of bullets) {
+        bullet.draw(ctx);
+    }
+    
+    const worldMouse = camera.screenToWorld(input.screenMouse, canvas);
+    const playerCenter = new Vec2(player.pos.x + player.size/2, player.pos.y + player.size/2);
+    
+    // Calculate direction from player to mouse
+    const dirToMouse = worldMouse.sub(playerCenter).normalize();
+    
+    // Calculate anchor point offset from player center in direction of mouse
+    let anchorPoint = playerCenter.add(dirToMouse.mult(CONFIG.PORTAL_ANCHOR_DISTANCE));
+    
+    // If anchor point is inside a wall, use player center instead
+    if (isPointInWall(anchorPoint, walls)) {
+        anchorPoint = playerCenter;
+    }
+    
+    // Cast ray from anchor point to mouse direction to find first wall hit
+    const rayHit = castRay(anchorPoint, dirToMouse, walls);
+    
+    // Use hit point if found, otherwise extend far in that direction
+    const lineEnd = rayHit ? rayHit.pos : anchorPoint.add(dirToMouse.mult(5000));
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 2;
+    ctx.moveTo(anchorPoint.x, anchorPoint.y);
+    ctx.lineTo(lineEnd.x, lineEnd.y);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(worldMouse.x, worldMouse.y, 5, 0, Math.PI*2);
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+    
+    // Draw preview portal at raycast hit location
+    if (rayHit && !isPaused) {
+        //drawPortalPreview(ctx, rayHit.pos, rayHit.normal);
+    }
+    
+    for (let p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.pos.x, p.pos.y, 3, 3);
+    }
+    
+    player.draw(ctx, portals);
+
+    ctx.restore();
+    
+    // Draw edge indicators for off-screen portals
+    drawPortalEdgeIndicators(ctx, canvas, camera, portals);
+    
+    // Draw edge indicator for off-screen player
+    drawPlayerEdgeIndicator(ctx, canvas, camera, player);
+}
+
+function drawPortalEdgeIndicators(ctx, canvas, camera, portals) {
+    // Calculate camera view bounds in world space
+    const viewHalfW = (canvas.width / camera.zoom) / 2;
+    const viewHalfH = (canvas.height / camera.zoom) / 2;
+    const viewLeft = camera.pos.x - viewHalfW;
+    const viewRight = camera.pos.x + viewHalfW;
+    const viewTop = camera.pos.y - viewHalfH;
+    const viewBottom = camera.pos.y + viewHalfH;
+    
+    const edgeMargin = 20; // Distance from screen edge
+    const indicatorSize = 30;
+    
+    for (let portal of portals) {
+        if (!portal.active) continue;
+        
+        const portalX = portal.pos.x;
+        const portalY = portal.pos.y;
+        
+        // Convert portal pos to screen space
+        const screenCenterX = canvas.width / 2;
+        const screenCenterY = canvas.height / 2;
+        const portalScreenX = screenCenterX + (portalX - camera.pos.x) * camera.zoom;
+        const portalScreenY = screenCenterY + (portalY - camera.pos.y) * camera.zoom;
+        
+        // Check if portal is outside view (using screen coordinates)
+        const isOutside = portalScreenX < 0 || portalScreenX > canvas.width || 
+                         portalScreenY < 0 || portalScreenY > canvas.height;
+        
+        if (!isOutside) continue; // Portal is visible, skip
+        
+        // Calculate direction from center of screen to portal on screen
+        const dx = portalScreenX - screenCenterX;
+        const dy = portalScreenY - screenCenterY;
+        
+        // Define the margin box
+        const minX = edgeMargin;
+        const maxX = canvas.width - edgeMargin;
+        const minY = edgeMargin;
+        const maxY = canvas.height - edgeMargin;
+        
+        // Clamp portal screen position to the margin box
+        // This implements "Orthographic" positioning (like Super Smash Bros bubbles)
+        // The indicator slides along the edge matching the portal's X or Y coordinate
+        let screenX = Math.max(minX, Math.min(maxX, portalScreenX));
+        let screenY = Math.max(minY, Math.min(maxY, portalScreenY));
+        
+        // Calculate angle from the indicator position to the portal position
+        let angle = Math.atan2(portalScreenY - screenY, portalScreenX - screenX);
+        
+        // Draw indicator arrow
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(angle);
+        
+        // Convert hex color to rgba for translucent fill
+        const color = portal.color;
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        
+        // Draw arrow pointing towards portal with translucent fill and solid stroke
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+        ctx.strokeStyle = portal.color; // Solid color stroke
+        ctx.lineWidth = 3; // Stronger stroke
+        
+        ctx.beginPath();
+        // Arrow shape (triangle pointing right, will be rotated)
+        ctx.moveTo(indicatorSize, 0);
+        ctx.lineTo(-indicatorSize/2, -indicatorSize/2);
+        ctx.lineTo(-indicatorSize/2, indicatorSize/2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Add glow effect
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = portal.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        ctx.restore();
+    }
+}
+
+function drawPlayerEdgeIndicator(ctx, canvas, camera, player) {
+    // Calculate camera view bounds in world space
+    const viewHalfW = (canvas.width / camera.zoom) / 2;
+    const viewHalfH = (canvas.height / camera.zoom) / 2;
+    const viewLeft = camera.pos.x - viewHalfW;
+    const viewRight = camera.pos.x + viewHalfW;
+    const viewTop = camera.pos.y - viewHalfH;
+    const viewBottom = camera.pos.y + viewHalfH;
+    
+    const playerCenter = player.getCenter();
+    const playerX = playerCenter.x;
+    const playerY = playerCenter.y;
+    
+    // Check if player is outside view
+    const isOutside = playerX < viewLeft || playerX > viewRight || 
+                     playerY < viewTop || playerY > viewBottom;
+    
+    if (!isOutside) return; // Player is visible, skip
+    
+    const edgeMargin = 20; // Distance from screen edge
+    const indicatorSize = 35; // Slightly larger than portal indicators
+    
+    // Convert player pos to screen space
+    const screenCenterX = canvas.width / 2;
+    const screenCenterY = canvas.height / 2;
+    const playerScreenX = screenCenterX + (playerX - camera.pos.x) * camera.zoom;
+    const playerScreenY = screenCenterY + (playerY - camera.pos.y) * camera.zoom;
+    
+    // Define the margin box
+    const minX = edgeMargin;
+    const maxX = canvas.width - edgeMargin;
+    const minY = edgeMargin;
+    const maxY = canvas.height - edgeMargin;
+    
+    // Clamp player screen position to the margin box
+    let screenX = Math.max(minX, Math.min(maxX, playerScreenX));
+    let screenY = Math.max(minY, Math.min(maxY, playerScreenY));
+    
+    // Calculate angle from the indicator position to the player position
+    let angle = Math.atan2(playerScreenY - screenY, playerScreenX - screenX);
+    
+    // Draw indicator arrow (white/light color for player)
+    ctx.save();
+    ctx.translate(screenX, screenY);
+    ctx.rotate(angle);
+    
+    // Draw arrow pointing towards player with translucent fill and solid stroke
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; // Translucent white fill
+    ctx.strokeStyle = '#fff'; // Solid white stroke
+    ctx.lineWidth = 3; // Strong stroke
+    
+    ctx.beginPath();
+    // Arrow shape (triangle pointing right, will be rotated)
+    ctx.moveTo(indicatorSize, 0);
+    ctx.lineTo(-indicatorSize/2, -indicatorSize/2);
+    ctx.lineTo(-indicatorSize/2, indicatorSize/2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Add glow effect
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#fff';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    ctx.restore();
+}
+
+let lastTime = 0;
+let accumulator = 0;
+const FIXED_STEP = 1 / 60; // Run physics at 60 Hz
+
+function loop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    
+    // Calculate time elapsed since last frame in seconds
+    let deltaTime = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+    
+    // Prevent spiral of death if framerate drops too low (e.g. tab backgrounded)
+    if (deltaTime > 0.1) deltaTime = 0.1;
+    
+    accumulator += deltaTime;
+    
+    // Run physics in fixed time steps
+    while (accumulator >= FIXED_STEP) {
+    update();
+        accumulator -= FIXED_STEP;
+    }
+    
+    draw();
+    requestAnimationFrame(loop);
+}
+
+init();
+
+</script>
+</body>
+</html>
