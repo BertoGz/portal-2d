@@ -34,7 +34,6 @@
             outline: none;
         }
 
-        /* UI Overlay (Pause Menu) */
         #ui {
             position: absolute;
             top: 0;
@@ -55,42 +54,6 @@
             pointer-events: auto;
         }
 
-        /* Main Menu Overlay */
-        #main-menu {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 20;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #222;
-            background: radial-gradient(circle, #333 0%, #111 100%);
-        }
-
-        #main-menu.hidden {
-            display: none;
-        }
-
-        .menu-box {
-            background: rgba(51, 51, 51, 0.9);
-            padding: 50px;
-            border-radius: 20px;
-            border: 1px solid #555;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-            text-align: center;
-            min-width: 450px;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
         .pause-menu {
             background: #333;
             padding: 40px;
@@ -103,19 +66,11 @@
 
         h1 { 
             margin: 0 0 10px 0; 
-            font-size: 42px; 
+            font-size: 32px; 
             color: #fff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
-
-        .subtitle {
-            color: #aaa;
-            font-size: 18px;
-            margin-bottom: 30px;
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
         
         .controls {
@@ -144,1305 +99,396 @@
             background: #00A2FF;
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 12px 30px;
             border-radius: 8px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+            transition: transform 0.1s, background 0.2s;
             margin-top: 20px;
-            box-shadow: 0 4px 0 #0077CC;
         }
 
         button:hover {
             background: #33b5ff;
             transform: translateY(-2px);
-            box-shadow: 0 6px 0 #0077CC;
         }
 
         button:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #0077CC;
+            transform: translateY(0);
         }
 
-        .start-btn {
-            background: #FF9900;
-            box-shadow: 0 4px 0 #cc7a00;
+        /* Editor Styles */
+        #editor-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #222;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
         }
-        .start-btn:hover {
-            background: #ffad33;
-            box-shadow: 0 6px 0 #cc7a00;
+
+        #editor-overlay.active {
+            display: flex;
         }
-        .start-btn:active {
-            box-shadow: 0 2px 0 #cc7a00;
+
+        /* Top Menu Bar */
+        #menubar {
+            background: #333;
+            padding: 0 10px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            user-select: none;
+        }
+
+        .menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: #444;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #333;
+            border: 1px solid #444;
+            min-width: 150px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .menu-item:hover .dropdown {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .dropdown-item:hover {
+            background: #444;
+        }
+
+        /* Main Layout */
+        #editor-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 250px;
+            background: #2a2a2a;
+            border-right: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .sidebar-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        /* Tools */
+        .tool-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .tool-btn {
+            flex: 1;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #444;
+            color: #ccc;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .tool-btn:hover {
+            background: #444;
+        }
+
+        .tool-btn.active {
+            background: #00A2FF;
+            color: white;
+            border-color: #00A2FF;
+        }
+
+        /* Block Palette */
+        .block-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+            gap: 5px;
+        }
+
+        .palette-item {
+            width: 32px;
+            height: 32px;
+            background: #444;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .palette-item.active {
+            border-color: #fff;
+            box-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+        
+        .palette-item[data-type="1"] { background: #888; } /* Regular Wall */
+        .palette-item[data-type="2"] { background: #00A2FF; } /* Water */
+        .palette-item[data-type="3"] { background: #FF5500; } /* Fire */
+        
+        /* Entities */
+        .entity-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+        }
+        
+        .entity-item:hover { background: #333; }
+        .entity-item.active { border-color: #00A2FF; background: #333; }
+        .entity-icon { width: 16px; height: 16px; margin-right: 8px; border-radius: 50%; }
+
+        /* Layers */
+        .layer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            background: #333;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .layer-item.active {
+            background: #444;
+            border-left-color: #00A2FF;
+        }
+
+        .layer-visibility {
+            width: 20px;
+            text-align: center;
+            margin-right: 5px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        
+        .layer-visibility:hover { color: #fff; }
+
+        /* Canvas Area */
+        #canvas-container {
+            flex: 1;
+            background: #111;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #editor-canvas {
+            display: block;
+            transform-origin: 0 0;
+            image-rendering: pixelated; /* Crisp pixels for editor */
+        }
+        
+        /* Status Bar */
+        #statusbar {
+            height: 25px;
+            background: #333;
+            border-top: 1px solid #444;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            color: #aaa;
+            justify-content: space-between;
+        }
+
+        /* Back to Game Button */
+        #back-to-game-btn {
+            background: #FF5500;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        #back-to-game-btn:hover {
+            background: #ff7733;
         }
     </style>
+  <script type="module" crossorigin>(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const i of document.querySelectorAll('link[rel="modulepreload"]'))s(i);new MutationObserver(i=>{for(const n of i)if(n.type==="childList")for(const o of n.addedNodes)o.tagName==="LINK"&&o.rel==="modulepreload"&&s(o)}).observe(document,{childList:!0,subtree:!0});function e(i){const n={};return i.integrity&&(n.integrity=i.integrity),i.referrerPolicy&&(n.referrerPolicy=i.referrerPolicy),i.crossOrigin==="use-credentials"?n.credentials="include":i.crossOrigin==="anonymous"?n.credentials="omit":n.credentials="same-origin",n}function s(i){if(i.ep)return;i.ep=!0;const n=e(i);fetch(i.href,n)}})();const d={GRAVITY:.2,MOVE_SPEED:3,MAX_SPEED:25,HIGH_SPEED_GROUND_RETENTION:.98,LOW_SPEED_GROUND_RETENTION:.7,MIN_AIR_ACCEL:.05,MAX_AIR_ACCEL:.2,SUBSTEPS:16,PORTAL_WIDTH:60,PLAYER_SIZE:24,PORTAL_ANCHOR_DISTANCE:30,ZOOM:1.5,CAM_LERP:.05,CAM_LOOKAHEAD:.3,CAM_BOUNDARY_PADDING:200,PORTAL_REDIRECT:1,PORTAL_SUCTION:0,PORTAL_SUCTION_SPEED_SCALE:0,PORTAL_SUCTION_PREDICT_TIME:1,MAX_CONTROL_LOCK_TIME:.5,CONTROL_LOCK_SPEED_THRESHOLD:4,BLOCK_SIZE:32,EDITOR_GRID_COLOR:"rgba(255, 255, 255, 0.1)",EDITOR_BG_COLOR:"#111"},R=1920,I=1080;class u{constructor(t,e){this.x=t,this.y=e}add(t){return new u(this.x+t.x,this.y+t.y)}sub(t){return new u(this.x-t.x,this.y-t.y)}mult(t){return new u(this.x*t,this.y*t)}mag(){return Math.sqrt(this.x*this.x+this.y*this.y)}normalize(){let t=this.mag();return t===0?new u(0,0):new u(this.x/t,this.y/t)}rotate(t){return new u(this.x*Math.cos(t)-this.y*Math.sin(t),this.x*Math.sin(t)+this.y*Math.cos(t))}dot(t){return this.x*t.x+this.y*t.y}}function et(r,t,e){let s=null,i=1/0,n=null,o=r.add(t.mult(3e3));for(let l of e){const c=[{p1:new u(l.x,l.y),p2:new u(l.x+l.w,l.y),n:new u(0,-1)},{p1:new u(l.x,l.y+l.h),p2:new u(l.x+l.w,l.y+l.h),n:new u(0,1)},{p1:new u(l.x,l.y),p2:new u(l.x,l.y+l.h),n:new u(-1,0)},{p1:new u(l.x+l.w,l.y),p2:new u(l.x+l.w,l.y+l.h),n:new u(1,0)}];for(let a of c){const p=a.p1.x,w=a.p1.y,g=a.p2.x,m=a.p2.y,y=r.x,f=r.y,v=o.x,x=o.y,E=(p-g)*(f-x)-(w-m)*(y-v);if(E===0)continue;const L=((p-y)*(f-x)-(w-f)*(y-v))/E,S=-((p-g)*(w-f)-(w-m)*(p-y))/E;if(L>=0&&L<=1&&S>=0&&S<=1){const C=p+L*(g-p),O=w+L*(m-w),M=Math.sqrt((C-r.x)**2+(O-r.y)**2);M<i&&(i=M,s=new u(C,O),n=a.n)}}}return s?{pos:s,normal:n,dist:i}:null}function st(r,t){for(let e of t)if(r.x>=e.x&&r.x<=e.x+e.w&&r.y>=e.y&&r.y<=e.y+e.h)return!0;return!1}class ct{static calculate(t,e,s,i=200){let n=1/0,o=1/0,l=-1/0,c=-1/0;for(let a of t)n=Math.min(n,a.x),o=Math.min(o,a.y),l=Math.max(l,a.x+a.w),c=Math.max(c,a.y+a.h);if(e)for(let a of e)a.active&&a.pos&&(n=Math.min(n,a.pos.x),o=Math.min(o,a.pos.y),l=Math.max(l,a.pos.x),c=Math.max(c,a.pos.y));if(s&&s.getCenter){const a=s.getCenter();n=Math.min(n,a.x),o=Math.min(o,a.y),l=Math.max(l,a.x),c=Math.max(c,a.y)}return!isFinite(n)||!isFinite(o)||!isFinite(l)||!isFinite(c)?{minX:0,minY:0,maxX:1920,maxY:1080,width:1920,height:1080}:(n-=i,o-=i,l+=i,c+=i,{minX:n,minY:o,maxX:l,maxY:c,width:l-n,height:c-o})}}class it{constructor(t,e,s){this.pos=new u(t,e),this.cameraVector=new u(t,e),this.lerpedPlayerPos=new u(t,e);const i=s.height/I;this.zoom=d.ZOOM*i}follow(t,e,s,i,n,o,l=null){this.lerpedPlayerPos.x+=(t.x-this.lerpedPlayerPos.x)*.15,this.lerpedPlayerPos.y+=(t.y-this.lerpedPlayerPos.y)*.15;let a,p;const w=s.height/I;let g=d.ZOOM*w;if(o&&n&&n[0].active&&n[1].active){const f=n[0].pos,v=n[1].pos,x=t,E=Math.min(f.x,v.x,x.x),L=Math.max(f.x,v.x,x.x),S=Math.min(f.y,v.y,x.y),C=Math.max(f.y,v.y,x.y);a=(E+L)/2,p=(S+C)/2;const O=d.PORTAL_WIDTH,M=d.PLAYER_SIZE,A=50,P=200,z=Math.max(P,L-E+Math.max(O,M)+A*2),U=Math.max(P,C-S+Math.max(O,M)+A*2),H=s.width/z,rt=s.height/U,at=d.ZOOM*w,lt=.5*w;g=Math.max(lt,Math.min(at,Math.min(H,rt)))}else{let f=s.width/2,v=s.height/2,x=(e.x-f)/this.zoom,E=(e.y-v)/this.zoom;const L=s.width/s.height;E*=L*2.2;let S=this.cameraVector.x+x,C=this.cameraVector.y+E;const O=d.CAM_LOOKAHEAD,M=1-O,A=O;let P=0,z=0,U=0;const H=M+A+P;a=(this.lerpedPlayerPos.x*M+S*A+z*P)/H,p=(this.lerpedPlayerPos.y*M+C*A+U*P)/H}this.cameraVector.x+=(a-this.cameraVector.x)*d.CAM_LERP,this.cameraVector.y+=(p-this.cameraVector.y)*d.CAM_LERP;let m=s.width/this.zoom/2,y=s.height/this.zoom/2;l?(this.cameraVector.x=Math.max(l.minX+m,Math.min(l.maxX-m,this.cameraVector.x)),this.cameraVector.y=Math.max(l.minY+y,Math.min(l.maxY-y,this.cameraVector.y))):(this.cameraVector.x=Math.max(m,Math.min(R-m,this.cameraVector.x)),this.cameraVector.y=Math.max(y,Math.min(I-y,this.cameraVector.y))),this.pos.x+=(this.cameraVector.x-this.pos.x)*d.CAM_LERP,this.pos.y+=(this.cameraVector.y-this.pos.y)*d.CAM_LERP,this.zoom+=(g-this.zoom)*.05}apply(t,e){t.translate(e.width/2,e.height/2),t.scale(this.zoom,this.zoom),t.translate(-this.pos.x,-this.pos.y)}screenToWorld(t,e){let s=e.width/2,i=e.height/2;return new u((t.x-s)/this.zoom+this.pos.x,(t.y-i)/this.zoom+this.pos.y)}}class G{constructor(t,e){this.id=t,this.color=e,this.active=!1,this.pos=new u(0,0),this.normal=new u(0,0),this.width=d.PORTAL_WIDTH}place(t,e){this.active=!0,this.pos=t,this.normal=e}getAngle(){return Math.atan2(this.normal.y,this.normal.x)}}class ht{constructor(t,e,s){this.pos=new u(t,e),this.vel=new u(0,0),this.size=s}getCenter(){return new u(this.pos.x+this.size/2,this.pos.y+this.size/2)}applyGravity(t){this.vel.y+=t}integrate(t){this.pos.x+=this.vel.x*t,this.pos.y+=this.vel.y*t}clampVelocity(t){this.vel.x=Math.max(-t,Math.min(t,this.vel.x)),this.vel.y=Math.max(-t,Math.min(t,this.vel.y))}checkCollision(t){if(this.pos.x<t.x+t.w&&this.pos.x+this.size>t.x&&this.pos.y<t.y+t.h&&this.pos.y+this.size>t.y){const e=t.x+t.w-this.pos.x,s=this.pos.x+this.size-t.x,i=t.y+t.h-this.pos.y,n=this.pos.y+this.size-t.y,o=Math.min(e,s,i,n);return{collided:!0,overlap:o,side:o===i?"top":o===n?"bottom":o===e?"right":"left",wall:t}}return null}resolveCollision(t){const e=this.checkCollision(t);if(!e)return null;const{side:s}=e;return s==="top"?(this.pos.y=t.y+t.h,this.vel.y=0,{side:"top",grounded:!1}):s==="bottom"?(this.pos.y=t.y-this.size,this.vel.y=0,{side:"bottom",grounded:!0}):s==="right"?(this.pos.x=t.x+t.w,this.vel.x=0,{side:"right",grounded:!1}):s==="left"?(this.pos.x=t.x-this.size,this.vel.x=0,{side:"left",grounded:!1}):null}applyFriction(t,e="x"){(e==="x"||e==="both")&&(this.vel.x*=t),(e==="y"||e==="both")&&(this.vel.y*=t)}applyAcceleration(t,e){const s=t.mult(e);this.vel=this.vel.add(s)}setVelocity(t,e){this.vel.x=t,this.vel.y=e}addVelocity(t,e){this.vel.x+=t,this.vel.y+=e}}class F{constructor(){this.moveX=0,this.jump=!1,this.shootBluePortal=!1,this.shootOrangePortal=!1,this.mouseX=0,this.mouseY=0,this.spaceHeld=!1}static fromRawInput(t){const e=new F;let s=0;return t.keys.a&&(s-=1),t.keys.d&&(s+=1),e.moveX=s,e.jump=t.keys.w||!1,e.shootBluePortal=t.keys.q||!1,e.shootOrangePortal=t.keys.e||!1,e.mouseX=t.screenMouse.x,e.mouseY=t.screenMouse.y,e.spaceHeld=t.keys[" "]||!1,e}serialize(){return{moveX:this.moveX,jump:this.jump,shootBluePortal:this.shootBluePortal,shootOrangePortal:this.shootOrangePortal,mouseX:this.mouseX,mouseY:this.mouseY,spaceHeld:this.spaceHeld}}static deserialize(t){const e=new F;return e.moveX=t.moveX,e.jump=t.jump,e.shootBluePortal=t.shootBluePortal,e.shootOrangePortal=t.shootOrangePortal,e.mouseX=t.mouseX,e.mouseY=t.mouseY,e.spaceHeld=t.spaceHeld,e}hasInput(){return this.moveX!==0||this.jump||this.shootBluePortal||this.shootOrangePortal}}class ot{constructor(t,e){this.body=new ht(t,e,d.PLAYER_SIZE),this.grounded=!1,this.portalCooldown=0,this.controlLockTimer=0,Object.defineProperty(this,"pos",{get:()=>this.body.pos,set:s=>{this.body.pos=s}}),Object.defineProperty(this,"vel",{get:()=>this.body.vel,set:s=>{this.body.vel=s}}),Object.defineProperty(this,"size",{get:()=>this.body.size})}getCenter(){return this.body.getCenter()}getGhostPos(t){if(!t||!t[0].active||!t[1].active)return null;const e=this.getCenter();let s=null,i=null,n=0;const o=450,l=e.sub(t[0].pos).mag(),c=e.sub(t[1].pos).mag();if(l<o?(s=t[0],i=t[1],n=l):c<o&&(s=t[1],i=t[0],n=c),s&&i){const a=new u(-s.normal.y,s.normal.x),p=new u(-i.normal.y,i.normal.x);let w=e.sub(s.pos);const g=w.dot(s.normal),m=w.dot(a),y=i.normal.mult(-g),f=p.mult(m);let v=y.add(f),x=Math.max(0,1-n/o);return x=x*x,{pos:i.pos.add(v),strength:x}}return null}update(t,e,s){new u(this.vel.x,this.vel.y),this.controlLockTimer>0&&this.controlLockTimer--;let i=0;this.controlLockTimer<=0&&(i=t.moveX);const n=Math.abs(this.vel.x),o=Math.min(1,n/d.MAX_SPEED);let l;if(this.grounded&&(l=d.LOW_SPEED_GROUND_RETENTION+(d.HIGH_SPEED_GROUND_RETENTION-d.LOW_SPEED_GROUND_RETENTION)*o),this.grounded&&this.body.applyFriction(l,"x"),this.body.applyGravity(d.GRAVITY),i!==0){const a=d.LOW_SPEED_GROUND_RETENTION,p=d.MOVE_SPEED*(1-a);let w;this.grounded||(w=d.MAX_AIR_ACCEL-(d.MAX_AIR_ACCEL-d.MIN_AIR_ACCEL)*o);const g=this.grounded?p:w,m=d.MOVE_SPEED;let y=this.vel.x*i,f=m-y;if(f>0){let v=Math.min(g,f);this.vel.x+=v*i}}t.jump&&this.grounded&&(this.body.setVelocity(this.body.vel.x,-8),this.grounded=!1),this.body.clampVelocity(d.MAX_SPEED),this.portalCooldown>0&&this.portalCooldown--,this.grounded=!1;const c=1/d.SUBSTEPS;for(let a=0;a<d.SUBSTEPS;a++)this.body.integrate(c),this.handlePortals(s),this.handleCollisions(e,s)}handleCollisions(t,e){for(let s of t){let i=!1;if(e&&e[0]&&e[1]&&e[0].active&&e[1].active)for(let o of e){const c=this.getCenter().sub(o.pos),a=new u(-o.normal.y,o.normal.x),p=c.dot(a);if(Math.abs(p)<o.width/2&&c.mag()<this.size*2&&o.pos.x>=s.x-1&&o.pos.x<=s.x+s.w+1&&o.pos.y>=s.y-1&&o.pos.y<=s.y+s.h+1){i=!0;break}}if(i)continue;const n=this.body.resolveCollision(s);n&&n.side==="bottom"&&(this.grounded=!0)}}handlePortals(t){if(this.portalCooldown>0)return;const e=t[0],s=t[1];!e.active||!s.active||(this.applyPortalSuction(e),this.applyPortalSuction(s),this.checkPortalIntersection(e,s),this.checkPortalIntersection(s,e))}applyPortalSuction(t){const e=this.getCenter(),s=this.vel.mag(),i=5,n=150;if(s<i)return;const o=d.PORTAL_SUCTION_PREDICT_TIME,l=e.add(this.vel.mult(o*60)),c=l.sub(t.pos).mag();if(c>=n||e.sub(t.pos).dot(t.normal)>=0)return;const w=this.vel.dot(t.normal),g=.3,m=-w/s;if(m>g){const y=new u(-t.normal.y,t.normal.x),f=l.sub(t.pos).dot(y),v=y.mult(-Math.sign(f)),x=(1-c/n)**2,E=Math.min(1,m/.7),L=s*d.PORTAL_SUCTION_SPEED_SCALE,S=d.PORTAL_SUCTION*x*E*L;this.vel=this.vel.add(v.mult(S))}}checkPortalIntersection(t,e){const i=this.getCenter().sub(t.pos),n=new u(-t.normal.y,t.normal.x),o=i.dot(t.normal),l=i.dot(n);if(Math.abs(l)<t.width/2){const c=this.pos.sub(this.vel.mult(1/d.SUBSTEPS));new u(c.x+this.size/2,c.y+this.size/2).sub(t.pos).dot(t.normal)>0&&o<=0&&this.teleport(t,e)}}teleport(t,e){const s=new u(-t.normal.y,t.normal.x),i=new u(-e.normal.y,e.normal.x),n=this.vel.dot(t.normal),o=this.vel.dot(s),l=e.normal.mult(-n),c=d.PORTAL_REDIRECT,a=i.mult(o*(1-c));let p=l.add(a);this.vel=p;let g=this.getCenter().sub(t.pos);g=g.mult(.2);const m=g.dot(t.normal),y=g.dot(s),f=e.normal.mult(-m),v=i.mult(y);let x=f.add(v),S=this.vel.mag()**2+0;S<0&&(S=0);const C=Math.sqrt(S);this.vel.mag()>0&&(this.vel=this.vel.normalize().mult(C));const O=3;this.vel.mag()<O&&(this.vel=e.normal.mult(O));let M=e.pos.add(x);if(!isFinite(M.x)||!isFinite(M.y))return;this.body.pos.x=M.x-this.size/2,this.body.pos.y=M.y-this.size/2,this.portalCooldown=2;const A=this.vel.mag(),P=Math.max(0,1-A/d.CONTROL_LOCK_SPEED_THRESHOLD),z=d.MAX_CONTROL_LOCK_TIME*P;this.controlLockTimer=Math.floor(z*60)}draw(t,e){this.drawBody(t,this.pos.x,this.pos.y);const s=this.getGhostPos(e);if(s){t.save();let i=Math.max(0,(s.strength-.7)*3.33);i>0&&(t.globalAlpha=.6*i,this.drawBody(t,s.pos.x-this.size/2,s.pos.y-this.size/2)),t.restore()}}drawBody(t,e,s){t.fillStyle="#fff",t.fillRect(e,s,this.size,this.size),t.fillStyle="#000";let i=this.vel.mag()>1?this.vel.normalize():new u(1,0);t.fillRect(e+this.size/2+i.x*6-2,s+this.size/2+i.y*6-2,4,4)}}class dt{constructor(t,e,s,i){this.pos=t,this.vel=e.mult(40),this.color=s,this.portalId=i,this.life=100,this.trail=[],this.trailLength=5}update(t,e,s,i){if(this.life--,this.life<=0)return!1;this.trail.unshift(new u(this.pos.x,this.pos.y)),this.trail.length>this.trailLength&&this.trail.pop();const n=this.pos.add(this.vel),o=et(this.pos,this.vel.normalize(),t);if(o){const l=Math.sqrt(Math.pow(o.pos.x-this.pos.x,2)+Math.pow(o.pos.y-this.pos.y,2)),c=this.vel.mag();if(l<=c){e(this.portalId,o.pos,o.normal),i&&i.playLand();for(let a=0;a<10;a++)s.push({pos:o.pos.add(o.normal.mult(2)),vel:new u((Math.random()-.5)*5+o.normal.x*5,(Math.random()-.5)*5+o.normal.y*5),life:30,color:this.color});return!1}}return this.pos=n,!0}draw(t){if(this.trail.length>1){t.beginPath(),t.moveTo(this.trail[0].x,this.trail[0].y);for(let e=1;e<this.trail.length;e++)t.lineTo(this.trail[e].x,this.trail[e].y);t.strokeStyle=this.color,t.lineWidth=3,t.lineCap="round",t.lineJoin="round",t.globalAlpha=.6,t.stroke(),t.globalAlpha=1}t.fillStyle="#fff",t.beginPath(),t.arc(this.pos.x,this.pos.y,4,0,Math.PI*2),t.fill()}}class ut{constructor(){this.inputState=new F,this.rawInput={keys:{},screenMouse:{x:0,y:0}},this.prevKeys={},this.onShootBluePortal=null,this.onShootOrangePortal=null}init(t){window.addEventListener("keydown",e=>{const s=e.key.toLowerCase();this.rawInput.keys[s]=!0,this.updateInputState()}),window.addEventListener("keyup",e=>{const s=e.key.toLowerCase();this.rawInput.keys[s]=!1,this.updateInputState()}),window.addEventListener("mousemove",e=>{const s=t.getBoundingClientRect();this.rawInput.screenMouse.x=Math.max(0,Math.min(t.width,e.clientX-s.left)),this.rawInput.screenMouse.y=Math.max(0,Math.min(t.height,e.clientY-s.top)),this.updateInputState()}),window.addEventListener("blur",()=>{this.rawInput.keys={},this.updateInputState()})}updateInputState(){this.inputState=F.fromRawInput(this.rawInput),this.inputState.shootBluePortal&&!this.prevKeys.q&&this.onShootBluePortal&&this.onShootBluePortal(),this.inputState.shootOrangePortal&&!this.prevKeys.e&&this.onShootOrangePortal&&this.onShootOrangePortal(),this.prevKeys={...this.rawInput.keys}}getInputState(){return this.inputState}isKeyPressed(t){return this.rawInput.keys[t.toLowerCase()]||!1}clearInput(){this.rawInput.keys={},this.updateInputState()}}class yt{constructor(t){this.canvas=t}instantiate(t){const e=t.blockSize||d.BLOCK_SIZE,s=[];let i={x:300,y:I-100};if(t.layers)for(const c of t.layers){if(!c.visible)continue;const a=new Map;for(const[p,w]of c.data){const[g,m]=p.split(",").map(Number);a.has(m)||a.set(m,new Map),a.get(m).set(g,w)}if(a.size){const p=this.mergeBlocks(a,e);s.push(...p)}}if(t.entities)for(const[c,a]of t.entities){const[p,w]=c.split(",").map(Number),g=p*e,m=w*e;a.type==="spawn"&&(i={x:g,y:m})}const n=new ot(i.x,i.y),o=new it(n.pos.x,n.pos.y,this.canvas),l=[new G(0,"#00A2FF"),new G(1,"#FF9900")];return{player:n,camera:o,walls:s,portals:l}}mergeBlocks(t,e){const s=[],i=new Set,n=Array.from(t.keys()).sort((o,l)=>l-o);for(const o of n){const l=t.get(o);if(!l)continue;const c=Array.from(l.keys()).sort((a,p)=>a-p);for(const a of c){const p=`${a},${o}`;if(i.has(p))continue;const w=l.get(a);let g=0;for(;;){const y=a+g,f=l.get(y),v=`${y},${o}`;if(f===w&&!i.has(v))g++;else break}if(g===0)continue;let m=1;for(;;){const y=o-m,f=t.get(y);if(!f)break;let v=!0;for(let x=0;x<g;x++){const E=a+x,L=`${E},${y}`;if(f.get(E)!==w||i.has(L)){v=!1;break}}if(!v)break;m++}for(let y=0;y<m;y++)for(let f=0;f<g;f++)i.add(`${a+f},${o-y}`);s.push({x:a*e,y:(o-(m-1))*e,w:g*e,h:m*e,type:w})}}return s}}class mt{constructor(){this.ctx=null,this.ambienceNode=null,this.gainNode=null,this.initialized=!1}init(){if(this.initialized)return;const t=window.AudioContext||window.webkitAudioContext;this.ctx=new t,this.initialized=!0,this.startAmbience()}startAmbience(){const t=()=>{if(!this.initialized)return;const e=15+Math.random()*10,s=30,i=this.ctx.currentTime,n=[55,65.41,73.42,82.41,48],o=n[Math.floor(Math.random()*n.length)],l=Math.random()*15+5,c=150+Math.random()*200,a=this.ctx.createGain();a.connect(this.ctx.destination);const p=4,w=5;a.gain.setValueAtTime(0,i),a.gain.linearRampToValueAtTime(.15,i+p),a.gain.setValueAtTime(.15,i+e-w),a.gain.linearRampToValueAtTime(0,i+e);const g=this.ctx.createOscillator();g.type=Math.random()>.5?"sine":"triangle",g.frequency.value=o,g.connect(a),g.start(i),g.stop(i+e);const m=this.ctx.createOscillator();m.type="sine",m.frequency.value=o,m.detune.value=l,m.connect(a),m.start(i),m.stop(i+e);const y=this.ctx.createOscillator();y.type="sawtooth",y.frequency.value=o*2;const f=this.ctx.createBiquadFilter();f.type="lowpass",f.frequency.value=c;const v=this.ctx.createOscillator();v.type="sine",v.frequency.value=.1+Math.random()*.1;const x=this.ctx.createGain();x.gain.value=50,v.connect(x),x.connect(f.frequency),v.start(i),v.stop(i+e),y.connect(f),f.connect(a),y.start(i),y.stop(i+e),setTimeout(t,(e+s)*1e3)};t()}playShoot(t){if(!this.initialized)return;const e=this.ctx.createOscillator(),s=this.ctx.createGain();e.type="triangle";const i=this.ctx.currentTime;e.frequency.setValueAtTime(800,i),e.frequency.exponentialRampToValueAtTime(100,i+.15),s.gain.setValueAtTime(.75,i),s.gain.exponentialRampToValueAtTime(.001,i+.15),e.connect(s),s.connect(this.ctx.destination),e.start(i),e.stop(i+.15)}playLand(){if(!this.initialized)return;const t=this.ctx.createOscillator(),e=this.ctx.createGain();t.type="sine";const s=this.ctx.currentTime;t.frequency.setValueAtTime(200,s),t.frequency.exponentialRampToValueAtTime(50,s+.2),e.gain.setValueAtTime(.75,s),e.gain.exponentialRampToValueAtTime(.001,s+.2),t.connect(e),e.connect(this.ctx.destination),t.start(s),t.stop(s+.2)}}class ft{constructor(t=50){this.undoStack=[],this.redoStack=[],this.limit=t}push(t){this.undoStack.push(t),this.undoStack.length>this.limit&&this.undoStack.shift(),this.redoStack=[]}undo(){if(this.undoStack.length===0)return;const t=this.undoStack.pop();t.undo(),this.redoStack.push(t)}redo(){if(this.redoStack.length===0)return;const t=this.redoStack.pop();t.redo(),this.undoStack.push(t)}canUndo(){return this.undoStack.length>0}canRedo(){return this.redoStack.length>0}clear(){this.undoStack=[],this.redoStack=[]}}class pt{constructor(t){this.history=t,this.width=100,this.height=100,this.blockSize=d.BLOCK_SIZE,this.layers=[],this.nextLayerId=1,this.activeLayerId=null,this.entities=new Map,this.addLayer("Layer 1")}addLayer(t){const e=this.nextLayerId++,s={id:e,name:t||`Layer ${e}`,visible:!0,data:new Map};return this.layers.push(s),this.activeLayerId=e,s}getActiveLayer(){return this.layers.find(t=>t.id===this.activeLayerId)}setActiveLayer(t){this.layers.find(s=>s.id===t)&&(this.activeLayerId=t)}toggleLayerVisibility(t){const e=this.layers.find(s=>s.id===t);e&&(e.visible=!e.visible)}placeBlock(t,e,s){const i=this.getActiveLayer();if(!i||!i.visible)return;const n=`${t},${e}`,o=i.data.get(n);o!==s&&(s===null?i.data.delete(n):i.data.set(n,s),this.history.push({undo:()=>{o==null?i.data.delete(n):i.data.set(n,o)},redo:()=>{s===null?i.data.delete(n):i.data.set(n,s)}}))}placeEntity(t,e,s){const i=`${t},${e}`,n=this.entities.get(i);if(n&&n.type===s)return;const o=s?{type:s,x:t,y:e}:null;o?this.entities.set(i,o):this.entities.delete(i),this.history.push({undo:()=>{n?this.entities.set(i,n):this.entities.delete(i)},redo:()=>{o?this.entities.set(i,o):this.entities.delete(i)}})}getBlock(t,e,s){const i=this.layers.find(n=>n.id===t);return i?i.data.get(`${e},${s}`):null}clear(){const t=JSON.parse(JSON.stringify(this.serialize().layers)),e=Array.from(this.entities.entries());this.layers=[],this.nextLayerId=1,this.entities.clear(),this.addLayer("Layer 1"),this.history.push({undo:()=>{this.deserialize({layers:t,entities:e})},redo:()=>{this.layers=[],this.nextLayerId=1,this.entities.clear(),this.addLayer("Layer 1")}})}serialize(){const t=this.layers.map(s=>({id:s.id,name:s.name,visible:s.visible,data:Array.from(s.data.entries())})),e=Array.from(this.entities.entries());return{width:this.width,height:this.height,blockSize:this.blockSize,layers:t,entities:e}}deserialize(t){t.layers&&(this.layers=t.layers.map(e=>({id:e.id,name:e.name,visible:e.visible,data:new Map(e.data)})),this.nextLayerId=Math.max(...this.layers.map(e=>e.id))+1,this.activeLayerId=this.layers[0].id),t.entities&&(this.entities=new Map(t.entities))}}class gt{constructor(t,e){this.canvas=t,this.ctx=t.getContext("2d"),this.levelManager=e,this.zoom=1,this.offsetX=0,this.offsetY=0,this.colors={1:"#888",2:"#00A2FF",3:"#FF5500"}}resize(){this.canvas.width=this.canvas.parentElement.clientWidth,this.canvas.height=this.canvas.parentElement.clientHeight,this.draw()}screenToGrid(t,e){const s=(t-this.offsetX)/this.zoom,i=(e-this.offsetY)/this.zoom,n=Math.floor(s/d.BLOCK_SIZE),o=Math.floor(i/d.BLOCK_SIZE);return{x:n,y:o}}draw(){const t=this.ctx,e=this.canvas.width,s=this.canvas.height;t.fillStyle=d.EDITOR_BG_COLOR,t.fillRect(0,0,e,s),t.save(),t.translate(this.offsetX,this.offsetY),t.scale(this.zoom,this.zoom),this.drawGrid(e,s),this.drawLayers(),this.drawEntities(),t.restore()}drawGrid(t,e){const s=this.ctx,i=d.BLOCK_SIZE,n=this.levelManager.width*i,o=this.levelManager.height*i;s.fillStyle="#222",s.fillRect(0,0,n,o),s.beginPath(),s.strokeStyle=d.EDITOR_GRID_COLOR,s.lineWidth=1/this.zoom;for(let l=0;l<=this.levelManager.width;l++)s.moveTo(l*i,0),s.lineTo(l*i,o);for(let l=0;l<=this.levelManager.height;l++)s.moveTo(0,l*i),s.lineTo(n,l*i);s.stroke(),s.beginPath(),s.strokeStyle="#444",s.moveTo(0,0),s.lineTo(n,0),s.moveTo(0,0),s.lineTo(0,o),s.stroke()}drawLayers(){const t=this.ctx,e=d.BLOCK_SIZE,s=this.levelManager.activeLayerId;for(const i of this.levelManager.layers)if(i.visible){t.globalAlpha=i.id===s?1:.5;for(const[n,o]of i.data.entries()){const[l,c]=n.split(",").map(Number),a=this.colors[o]||"#f0f";t.fillStyle=a,t.fillRect(l*e,c*e,e,e)}}t.globalAlpha=1}drawEntities(){const t=this.ctx,e=d.BLOCK_SIZE;for(const[s,i]of this.levelManager.entities.entries()){const[n,o]=s.split(",").map(Number),l=n*e,c=o*e,a=l+e/2,p=c+e/2;i.type==="spawn"?(t.fillStyle="#0f0",t.fillRect(l+2,c+2,e-4,e-4)):i.type==="health"?(t.fillStyle="#f00",t.fillRect(a-2,c+4,4,e-8),t.fillRect(l+4,p-2,e-8,4)):i.type==="coin"&&(t.fillStyle="#ff0",t.beginPath(),t.arc(a,p,e/3,0,Math.PI*2),t.fill())}}pan(t,e){this.offsetX+=t,this.offsetY+=e,this.draw()}setZoom(t){return this.zoom,this.zoom*=1+t*.1,this.zoom=Math.max(.1,Math.min(5,this.zoom)),this.draw(),this.zoom}}class wt{constructor(){this.canvas=document.getElementById("editor-canvas"),this.history=new ft,this.levelManager=new pt(this.history),this.renderer=new gt(this.canvas,this.levelManager),this.activeTool="brush",this.activeBlock=1,this.activeEntity=null,this.isDrawing=!1,this.isPanning=!1,this.lastMouseX=0,this.lastMouseY=0,this.init()}init(){this.bindEvents(),this.renderer.resize(),window.addEventListener("resize",()=>this.renderer.resize()),this.updateUI()}bindEvents(){this.canvas.addEventListener("mousedown",t=>this.onMouseDown(t)),this.canvas.addEventListener("mousemove",t=>this.onMouseMove(t)),this.canvas.addEventListener("mouseup",t=>this.onMouseUp(t)),this.canvas.addEventListener("mouseleave",t=>this.onMouseUp(t)),this.canvas.addEventListener("wheel",t=>this.onWheel(t)),window.addEventListener("keydown",t=>{t.key===" "?this.isPanning||(this.prevTool=this.activeTool,this.setTool("pan")):t.key.toLowerCase()==="b"?this.setTool("brush"):t.key.toLowerCase()==="e"?this.setTool("eraser"):(t.ctrlKey||t.metaKey)&&t.key.toLowerCase()==="z"?(t.preventDefault(),this.history.undo(),this.renderer.draw()):(t.ctrlKey||t.metaKey)&&t.key.toLowerCase()==="y"&&(t.preventDefault(),this.history.redo(),this.renderer.draw())}),window.addEventListener("keyup",t=>{t.key===" "&&this.prevTool&&(this.setTool(this.prevTool),this.prevTool=null)})}onMouseDown(t){const e=this.canvas.getBoundingClientRect(),s=t.clientX-e.left,i=t.clientY-e.top;this.lastMouseX=s,this.lastMouseY=i,this.activeTool==="pan"||t.button===1?(this.isPanning=!0,this.canvas.style.cursor="grabbing"):t.button===0&&(this.isDrawing=!0,this.useTool(s,i))}onMouseMove(t){const e=this.canvas.getBoundingClientRect(),s=t.clientX-e.left,i=t.clientY-e.top,n=this.renderer.screenToGrid(s,i);if(document.getElementById("status-coords").textContent=`${n.x}, ${n.y}`,this.isPanning){const o=s-this.lastMouseX,l=i-this.lastMouseY;this.renderer.pan(o,l)}else this.isDrawing&&(this.useTool(s,i),this.renderer.draw());this.lastMouseX=s,this.lastMouseY=i}onMouseUp(t){this.isDrawing=!1,this.isPanning=!1,this.activeTool==="pan"?this.canvas.style.cursor="grab":this.canvas.style.cursor="crosshair"}onWheel(t){t.preventDefault();const e=-Math.sign(t.deltaY),s=this.renderer.setZoom(e);document.getElementById("status-zoom").textContent=Math.round(s*100)+"%"}useTool(t,e){const{x:s,y:i}=this.renderer.screenToGrid(t,e);s<0||i<0||s>=this.levelManager.width||i>=this.levelManager.height||(this.activeTool==="brush"?this.activeEntity?this.levelManager.placeEntity(s,i,this.activeEntity):this.levelManager.placeBlock(s,i,this.activeBlock):this.activeTool==="eraser"&&(this.levelManager.placeBlock(s,i,null),this.levelManager.placeEntity(s,i,null)))}setTool(t){this.activeTool=t,document.querySelectorAll(".tool-btn").forEach(s=>s.classList.remove("active"));const e=document.getElementById(`tool-${t}`);e&&e.classList.add("active"),this.canvas.style.cursor=t==="pan"?"grab":"crosshair"}setBlock(t){var e;this.activeBlock=t,this.activeEntity=null,this.activeTool="brush",this.setTool("brush"),document.querySelectorAll(".palette-item").forEach(s=>s.classList.remove("active")),(e=document.querySelector(`.palette-item[data-type="${t}"]`))==null||e.classList.add("active"),document.querySelectorAll(".entity-item").forEach(s=>s.classList.remove("active"))}setEntity(t){var e;this.activeEntity=t,this.activeBlock=null,this.activeTool="brush",this.setTool("brush"),document.querySelectorAll(".palette-item").forEach(s=>s.classList.remove("active")),document.querySelectorAll(".entity-item").forEach(s=>s.classList.remove("active")),(e=document.querySelector(`.entity-item[data-type="${t}"]`))==null||e.classList.add("active")}addLayer(){this.levelManager.addLayer(),this.updateLayerList()}updateLayerList(){const t=document.getElementById("layer-list");t.innerHTML="",[...this.levelManager.layers].reverse().forEach(e=>{const s=document.createElement("div");s.className=`layer-item ${e.id===this.levelManager.activeLayerId?"active":""}`,s.onclick=()=>{this.levelManager.setActiveLayer(e.id),this.updateLayerList(),this.renderer.draw(),document.getElementById("status-layer").textContent=e.name};const i=document.createElement("span");i.className="layer-visibility",i.textContent=e.visible?"👁️":"○",i.onclick=o=>{o.stopPropagation(),this.levelManager.toggleLayerVisibility(e.id),this.updateLayerList(),this.renderer.draw()};const n=document.createElement("span");n.textContent=e.name,s.appendChild(i),s.appendChild(n),t.appendChild(s)})}updateUI(){this.updateLayerList()}}let V=null;function vt(){if(V){V.updateUI(),V.renderer.draw();return}const r=new wt;V=r,document.getElementById("tool-brush").onclick=()=>r.setTool("brush"),document.getElementById("tool-eraser").onclick=()=>r.setTool("eraser"),document.getElementById("tool-pan").onclick=()=>r.setTool("pan"),document.querySelectorAll(".palette-item").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".palette-item").forEach(s=>s.classList.remove("active")),t.classList.add("active");const e=parseInt(t.getAttribute("data-type"));r.setBlock(e)}}),document.querySelectorAll(".entity-item").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".entity-item").forEach(s=>s.classList.remove("active")),t.classList.add("active");const e=t.getAttribute("data-type");r.setEntity(e)}}),document.getElementById("add-layer-btn").onclick=()=>r.addLayer(),document.getElementById("menu-clear").onclick=()=>{confirm("Are you sure you want to clear the level? All unsaved changes will be lost.")&&(r.levelManager.clear(),r.updateUI(),r.renderer.draw())},document.getElementById("menu-save").onclick=()=>{const t=r.levelManager.serialize(),e=new Blob([JSON.stringify(t,null,2)],{type:"application/json"}),s=URL.createObjectURL(e),i=document.createElement("a");i.href=s,i.download="level.json",i.click(),URL.revokeObjectURL(s)},document.getElementById("menu-load").onclick=()=>{const t=document.createElement("input");t.type="file",t.accept=".json",t.onchange=e=>{const s=e.target.files[0];if(!s)return;const i=new FileReader;i.onload=n=>{try{const o=JSON.parse(n.target.result);r.levelManager.deserialize(o),r.updateUI(),r.renderer.draw()}catch(o){alert("Failed to load level: "+o.message)}},i.readAsText(s)},t.click()},document.getElementById("menu-export").onclick=()=>{const t=r.levelManager.serialize();navigator.clipboard.writeText(JSON.stringify(t,null,2)).then(()=>{alert("Level data copied to clipboard! You can paste it into the game's Load Level feature.")}).catch(e=>{console.error("Failed to copy:",e),alert("Failed to copy to clipboard. Use Save Level instead.")})},document.getElementById("menu-undo").onclick=()=>{r.history.undo(),r.renderer.draw()},document.getElementById("menu-redo").onclick=()=>{r.history.redo(),r.renderer.draw()},document.getElementById("menu-grid").onclick=()=>{r.renderer.draw()},document.getElementById("menu-reset-view").onclick=()=>{r.renderer.zoom=1,r.renderer.offsetX=0,r.renderer.offsetY=0,r.renderer.draw()},r.updateUI()}const b=document.getElementById("gameCanvas"),Z=document.getElementById("game-container"),h=b.getContext("2d");let N;const $=new mt;let T,D,B=[],k=[],X=[],Y=[],_=!1;function xt(r,t,e){k[r].active=!0,k[r].pos=t,k[r].normal=e,k[r].width=d.PORTAL_WIDTH}function q(){_=!_;const r=document.getElementById("ui");_?r.classList.add("paused"):r.classList.remove("paused")}function j(){const r=1.7777777777777777;let t=window.innerWidth,e=window.innerHeight;t/e>r?t=e*r:e=t/r,Z.style.width=t+"px",Z.style.height=e+"px",b.width=t,b.height=e}function Et(r){const e=new yt(b).instantiate(r);T=e.player,D=e.camera,B=e.walls,k=e.portals,Y=[],X=[]}function J(){T=new ot(300,I-100),D=new it(T.pos.x,T.pos.y,b),k=[new G(0,"#00A2FF"),new G(1,"#FF9900")],B=[{x:0,y:0,w:R,h:40},{x:0,y:I-40,w:R,h:40},{x:0,y:0,w:40,h:I},{x:R-40,y:0,w:40,h:I},{x:200,y:I-250,w:200,h:20},{x:700,y:I-500,w:40,h:500},{x:800,y:300,w:400,h:40},{x:150,y:400,w:150,h:20},{x:R-400,y:I-150,w:60,h:110},{x:R-340,y:I-250,w:60,h:210},{x:R-280,y:I-350,w:60,h:310}]}function Mt(){j(),window.addEventListener("resize",j),N=new ut,N.init(b),N.onShootBluePortal=()=>{_||Q(0)},N.onShootOrangePortal=()=>{_||Q(1)};const r=()=>{$.init(),window.removeEventListener("keydown",r),window.removeEventListener("mousedown",r),window.removeEventListener("click",r)};window.addEventListener("keydown",r),window.addEventListener("mousedown",r),window.addEventListener("click",r),window.addEventListener("keydown",s=>{s.key.toLowerCase()==="escape"&&(s.preventDefault(),s.stopPropagation(),q(),_&&N.clearInput())}),window.addEventListener("contextmenu",s=>s.preventDefault()),document.getElementById("resumeBtn").addEventListener("click",()=>{_&&q()}),document.getElementById("resetBtn").addEventListener("click",()=>{J(),_&&q()}),document.getElementById("loadLevelBtn").addEventListener("click",()=>{const s=document.createElement("input");s.type="file",s.accept=".json",s.onchange=i=>{const n=i.target.files[0];if(!n)return;const o=new FileReader;o.onload=l=>{try{const c=JSON.parse(l.target.result);Et(c),_&&q()}catch(c){alert("Failed to load level: "+c.message)}},o.readAsText(n)},s.click()});const t=document.getElementById("editor-overlay"),e=document.getElementById("game-container");document.getElementById("editorBtn").addEventListener("click",()=>{t.classList.add("active"),e.style.display="none",vt()}),document.getElementById("back-to-game-btn").addEventListener("click",()=>{t.classList.remove("active"),e.style.display="flex"}),J(),requestAnimationFrame(nt)}function Q(r){const t=N.getInputState(),e=new u(t.mouseX,t.mouseY),s=D.screenToWorld(e,b),i=new u(T.pos.x+T.size/2,T.pos.y+T.size/2),n=s.sub(i).normalize();let o=i.add(n.mult(d.PORTAL_ANCHOR_DISTANCE));st(o,B)&&(o=i),Y.push(new dt(o,n,k[r].color,r)),$.playShoot()}function Lt(){const r=document.getElementById("editor-overlay");if(_||r.classList.contains("active"))return;const t=N.getInputState();T.update(t,B,k);const e=new u(t.mouseX,t.mouseY),s=T.getGhostPos(k),i=ct.calculate(B,k,T,d.CAM_BOUNDARY_PADDING);D.follow(T.getCenter(),e,b,s,k,t.spaceHeld,i);for(let n=Y.length-1;n>=0;n--)Y[n].update(B,xt,X,$)||Y.splice(n,1);for(let n=X.length-1;n>=0;n--){let o=X[n];o.pos=o.pos.add(o.vel),o.life--,o.life<=0&&X.splice(n,1)}}function St(r,t,e,s){const i=t.width/e.zoom/2,n=t.height/e.zoom/2;e.pos.x-i,e.pos.x+i,e.pos.y-n,e.pos.y+n;const o=20,l=30;for(let c of s){if(!c.active)continue;const a=c.pos.x,p=c.pos.y,w=t.width/2,g=t.height/2,m=w+(a-e.pos.x)*e.zoom,y=g+(p-e.pos.y)*e.zoom;if(!(m<0||m>t.width||y<0||y>t.height))continue;const v=o,x=t.width-o,E=o,L=t.height-o;let S=Math.max(v,Math.min(x,m)),C=Math.max(E,Math.min(L,y)),O=Math.atan2(y-C,m-S);r.save(),r.translate(S,C),r.rotate(O);const M=c.color,A=parseInt(M.slice(1,3),16),P=parseInt(M.slice(3,5),16),z=parseInt(M.slice(5,7),16);r.fillStyle=`rgba(${A}, ${P}, ${z}, 0.4)`,r.strokeStyle=c.color,r.lineWidth=3,r.beginPath(),r.moveTo(l,0),r.lineTo(-l/2,-l/2),r.lineTo(-l/2,l/2),r.closePath(),r.fill(),r.stroke(),r.shadowBlur=15,r.shadowColor=c.color,r.fill(),r.shadowBlur=0,r.restore()}}function Tt(r,t,e,s){const i=t.width/e.zoom/2,n=t.height/e.zoom/2,o=e.pos.x-i,l=e.pos.x+i,c=e.pos.y-n,a=e.pos.y+n,p=s.getCenter(),w=p.x,g=p.y;if(!(w<o||w>l||g<c||g>a))return;const y=20,f=35,v=t.width/2,x=t.height/2,E=v+(w-e.pos.x)*e.zoom,L=x+(g-e.pos.y)*e.zoom,S=y,C=t.width-y,O=y,M=t.height-y;let A=Math.max(S,Math.min(C,E)),P=Math.max(O,Math.min(M,L)),z=Math.atan2(L-P,E-A);r.save(),r.translate(A,P),r.rotate(z),r.fillStyle="rgba(255, 255, 255, 0.4)",r.strokeStyle="#fff",r.lineWidth=3,r.beginPath(),r.moveTo(f,0),r.lineTo(-f/2,-f/2),r.lineTo(-f/2,f/2),r.closePath(),r.fill(),r.stroke(),r.shadowBlur=20,r.shadowColor="#fff",r.fill(),r.shadowBlur=0,r.restore()}function It(){if(document.getElementById("editor-overlay").classList.contains("active"))return;h.fillStyle="#000",h.fillRect(0,0,b.width,b.height),h.save(),D.apply(h,b),h.fillStyle="#222",h.fillRect(0,0,R,I),h.strokeStyle="#333",h.lineWidth=1,h.beginPath();for(let a=0;a<=R;a+=100)h.moveTo(a,0),h.lineTo(a,I);for(let a=0;a<=I;a+=100)h.moveTo(0,a),h.lineTo(R,a);h.stroke(),h.fillStyle="#444";for(let a of B)h.fillRect(a.x,a.y,a.w,a.h),h.strokeStyle="#555",h.lineWidth=2,h.strokeRect(a.x,a.y,a.w,a.h);for(let a of k)a.active&&(h.save(),h.translate(a.pos.x,a.pos.y),h.rotate(a.getAngle()),h.shadowBlur=20,h.shadowColor=a.color,h.fillStyle=a.color,h.fillRect(0,-a.width/2,4,a.width),h.fillStyle="#000",h.fillRect(-2,-a.width/2+2,2,a.width-4),h.restore());for(let a of Y)a.draw(h);const t=N.getInputState(),e=new u(t.mouseX,t.mouseY),s=D.screenToWorld(e,b),i=new u(T.pos.x+T.size/2,T.pos.y+T.size/2),n=s.sub(i).normalize();let o=i.add(n.mult(d.PORTAL_ANCHOR_DISTANCE));st(o,B)&&(o=i);const l=et(o,n,B),c=l?l.pos:o.add(n.mult(5e3));h.beginPath(),h.strokeStyle="rgba(255, 255, 255, 0.1)",h.lineWidth=2,h.moveTo(o.x,o.y),h.lineTo(c.x,c.y),h.stroke(),h.beginPath(),h.arc(s.x,s.y,5,0,Math.PI*2),h.strokeStyle="#fff",h.stroke();for(let a of X)h.fillStyle=a.color,h.fillRect(a.pos.x,a.pos.y,3,3);T.draw(h,k),h.restore(),St(h,b,D,k),Tt(h,b,D,T)}let W=0,K=0;const tt=1/60;function nt(r){W||(W=r);let t=(r-W)/1e3;for(W=r,t>.1&&(t=.1),K+=t;K>=tt;)Lt(),K-=tt;It(),requestAnimationFrame(nt)}Mt();</script>
 </head>
 <body>
 
+<!-- Game Container -->
 <div id="game-container">
-    <!-- Main Menu -->
-    <div id="main-menu">
-        <div class="menu-box">
-            <h1>Portal 2d</h1>
-            <div class="subtitle">(demo)</div>
-            <div class="controls">
-                <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to Move & Jump</p>
-                <p><span class="key">Q</span> Shoot Blue Portal</p>
-                <p><span class="key">E</span> Shoot Orange Portal</p>
-                <p><span class="key">Space</span> Hold to View Portals</p>
-            </div>
-            <button id="startBtn" class="start-btn">START GAME</button>
-        </div>
-    </div>
-
-    <!-- Pause UI -->
     <div id="ui">
         <div class="pause-menu">
-            <h1>PAUSED</h1>
-            <div class="controls">
-                <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to Move & Jump</p>
+            <h1>Portal 2d (demo)</h1>
+        <div class="controls">
+            <p><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to Move & Jump</p>
+
+          
                 <p><span class="key">Q</span> Shoot Blue Portal</p>
                 <p><span class="key">E</span> Shoot Orange Portal</p>
-                <p><span class="key">Space</span> Hold to View Portals</p>
-                <p><span class="key">ESC</span> to Resume</p>
+            <p><span class="key">Space</span> Hold to View Portals</p>
+                <p><span class="key">ESC</span> to Pause/Resume</p>
             </div>
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
                 <button id="resumeBtn">RESUME</button>
                 <button id="resetBtn">RESET</button>
+                <button id="loadLevelBtn">LOAD LEVEL</button>
+                <button id="editorBtn" style="background: #FF5500;">LEVEL EDITOR</button>
             </div>
         </div>
     </div>
     <canvas id="gameCanvas" tabindex="0"></canvas>
 </div>
 
-<script>
-/**
- * AUDIO SYSTEM (Web Audio API)
- */
-class SoundManager {
-    constructor() {
-        this.ctx = null;
-        this.ambienceNode = null;
-        this.gainNode = null;
-        this.initialized = false;
-    }
+<!-- Editor Overlay -->
+<div id="editor-overlay">
+    <!-- Menubar -->
+    <div id="menubar">
+        <div class="menu-item">
+            File
+            <div class="dropdown">
+                <div class="dropdown-item" id="menu-clear">Clear Level</div>
+                <div class="dropdown-item" id="menu-save">Save Level (JSON)</div>
+                <div class="dropdown-item" id="menu-load">Load Level</div>
+                <div class="dropdown-item" id="menu-export">Export for Game</div>
+            </div>
+        </div>
+        <div class="menu-item">
+            Edit
+            <div class="dropdown">
+                <div class="dropdown-item" id="menu-undo">Undo (Ctrl+Z)</div>
+                <div class="dropdown-item" id="menu-redo">Redo (Ctrl+Y)</div>
+            </div>
+        </div>
+        <div class="menu-item">
+            View
+            <div class="dropdown">
+                <div class="dropdown-item" id="menu-grid">Toggle Grid</div>
+                <div class="dropdown-item" id="menu-reset-view">Reset View</div>
+            </div>
+        </div>
+        <div style="flex:1"></div>
+        <button id="back-to-game-btn">Back to Game</button>
+        <div class="menu-item" style="color: #aaa; font-style: italic;">Portal 2D Editor</div>
+    </div>
 
-    init() {
-        if (this.initialized) return;
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AudioContext();
-        this.initialized = true;
-        this.startAmbience();
-    }
-
-    startAmbience() {
-        const playDroneInstance = () => {
-            if (!this.initialized) return;
-
-            // Configuration
-            const playDuration = 15 + Math.random() * 10; // Random duration between 15s and 25s
-            const silenceDuration = 30; // Silence for 30 seconds
-            const now = this.ctx.currentTime;
-
-            // Randomize Tone Parameters
-            // Frequencies: Low A, Low C, Low D, Low E, Low G (Cinematic minor pentatonic)
-            const baseFreqs = [55.00, 65.41, 73.42, 82.41, 48.00]; 
-            const baseFreq = baseFreqs[Math.floor(Math.random() * baseFreqs.length)];
-            const detuneAmount = Math.random() * 15 + 5; // Random detune for texture thickness
-            const filterFreq = 150 + Math.random() * 200; // Random brightness
-
-            // Master gain for this drone instance (handles fade in/out)
-            const instanceGain = this.ctx.createGain();
-            instanceGain.connect(this.ctx.destination);
-
-            // Envelope: Slow Fade In (4s) -> Sustain -> Slow Fade Out (5s)
-            const fadeIn = 4;
-            const fadeOut = 5;
+    <!-- Main Layout -->
+    <div id="editor-layout">
+        <!-- Sidebar -->
+        <div id="sidebar">
             
-            instanceGain.gain.setValueAtTime(0, now);
-            instanceGain.gain.linearRampToValueAtTime(0.15, now + fadeIn); // Fade in to 15% volume
-            instanceGain.gain.setValueAtTime(0.15, now + playDuration - fadeOut);
-            instanceGain.gain.linearRampToValueAtTime(0, now + playDuration); // Fade out to 0
+            <!-- Tools -->
+            <div class="sidebar-section">
+                <h3>Tools</h3>
+                <div class="tool-group">
+                    <div class="tool-btn active" id="tool-brush" title="Brush (B)">Brush</div>
+                    <div class="tool-btn" id="tool-eraser" title="Eraser (E)">Eraser</div>
+                    <div class="tool-btn" id="tool-pan" title="Pan (Space)">Pan</div>
+                </div>
+            </div>
 
-            // Oscillator 1: Deep Foundation (Sine or Triangle)
-            const osc1 = this.ctx.createOscillator();
-            osc1.type = Math.random() > 0.5 ? 'sine' : 'triangle';
-            osc1.frequency.value = baseFreq; 
-            osc1.connect(instanceGain);
-            osc1.start(now);
-            osc1.stop(now + playDuration);
+            <!-- Blocks -->
+            <div class="sidebar-section">
+                <h3>Blocks</h3>
+                <div class="block-palette" id="block-palette">
+                    <div class="palette-item active" data-type="1" title="Wall"></div>
+                    <div class="palette-item" data-type="2" title="Water"></div>
+                    <div class="palette-item" data-type="3" title="Fire"></div>
+                </div>
+            </div>
 
-            // Oscillator 2: Detuned Layer (Creates "beating" texture)
-            const osc2 = this.ctx.createOscillator();
-            osc2.type = 'sine';
-            osc2.frequency.value = baseFreq;
-            osc2.detune.value = detuneAmount; 
-            osc2.connect(instanceGain);
-            osc2.start(now);
-            osc2.stop(now + playDuration);
+            <!-- Entities -->
+            <div class="sidebar-section">
+                <h3>Entities</h3>
+                <div id="entity-palette">
+                    <div class="entity-item" data-type="spawn">
+                        <div class="entity-icon" style="background: #0f0"></div> Player Spawn
+                    </div>
+                    <div class="entity-item" data-type="health">
+                        <div class="entity-icon" style="background: #f00"></div> Health Pack
+                    </div>
+                    <div class="entity-item" data-type="coin">
+                        <div class="entity-icon" style="background: #ff0"></div> Coin
+                    </div>
+                </div>
+            </div>
 
-            // Oscillator 3: Harmonic Texture (Octave up, filtered)
-            const osc3 = this.ctx.createOscillator();
-            osc3.type = 'sawtooth';
-            osc3.frequency.value = baseFreq * 2; // Octave up
+            <!-- Layers -->
+            <div class="sidebar-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3>Layers</h3>
+                    <button id="add-layer-btn" style="background:none; border:none; color:#fff; cursor:pointer;">+</button>
+                </div>
+                <div class="layer-list" id="layer-list">
+                    <div class="layer-item active">
+                        <span class="layer-visibility">👁️</span>
+                        <span>Layer 1</span>
+                    </div>
+                </div>
+            </div>
             
-            // Lowpass filter to tame the sawtooth
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = filterFreq; 
-            
-            // LFO to modulate the filter (slow breathing movement)
-            const lfo = this.ctx.createOscillator();
-            lfo.type = 'sine';
-            lfo.frequency.value = 0.1 + Math.random() * 0.1; // Very slow cycle
-            const lfoGain = this.ctx.createGain();
-            lfoGain.gain.value = 50; // Modulate filter freq by +/- 50Hz
+        </div>
+
+        <!-- Canvas -->
+        <div id="canvas-container">
+            <canvas id="editor-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusbar">
+        <div id="status-coords">0, 0</div>
+        <div id="status-layer">Layer 1</div>
+        <div id="status-zoom">100%</div>
+    </div>
+</div>
 
-            lfo.connect(lfoGain);
-            lfoGain.connect(filter.frequency);
-            lfo.start(now);
-            lfo.stop(now + playDuration);
-
-            osc3.connect(filter);
-            filter.connect(instanceGain);
-            osc3.start(now);
-            osc3.stop(now + playDuration);
-
-            // Schedule the next drone after Play Time + Silence Time
-            // The timeout is in milliseconds
-            setTimeout(playDroneInstance, (playDuration + silenceDuration) * 1000);
-        };
-
-        // Start the first loop immediately
-        playDroneInstance();
-    }
-
-    playShoot(type) {
-        if (!this.initialized) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'triangle';
-        
-        // Pitch sweep (High to low zap)
-        const now = this.ctx.currentTime;
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
-
-        // Volume envelope
-        gain.gain.setValueAtTime(0.75, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start(now);
-        osc.stop(now + 0.15);
-    }
-
-    playLand() {
-        if (!this.initialized) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        
-        // Lower thud/activation sound
-        const now = this.ctx.currentTime;
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-
-        gain.gain.setValueAtTime(0.75, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start(now);
-        osc.stop(now + 0.2);
-    }
-}
-
-const soundManager = new SoundManager();
-
-/**
- * GAME CONFIGURATION & CONSTANTS
- */
-const CONFIG = {
-    GRAVITY: 0.2,         
-    MOVE_SPEED: 3,         
-    MAX_SPEED: 25,         
-    HIGH_SPEED_GROUND_RETENTION: 0.98,  
-    LOW_SPEED_GROUND_RETENTION: 0.70,   
-    MIN_AIR_ACCEL: 0.05,        
-    MAX_AIR_ACCEL: 0.2,         
-    JUMP_FORCE: 8,
-    SUBSTEPS: 16, 
-    PORTAL_WIDTH: 60,
-    PLAYER_SIZE: 24,
-    PORTAL_ANCHOR_DISTANCE: 20, 
-    ZOOM: 1.5,             
-    CAM_LERP: 0.1,         
-    CAM_LOOKAHEAD: 0.3,
-    PORTAL_REDIRECT: 1.0,  
-    PORTAL_SUCTION: 0,   
-    PORTAL_SUCTION_SPEED_SCALE: 0.0,  
-    PORTAL_SUCTION_PREDICT_TIME: 1.0,  
-    MAX_CONTROL_LOCK_TIME: 0.5, 
-    CONTROL_LOCK_SPEED_THRESHOLD: 4 
-};
-
-// World Dimensions
-const WORLD_W = 1920; 
-const WORLD_H = 1080;
-
-/**
- * UTILITIES & MATH
- */
-class Vec2 {
-    constructor(x, y) { this.x = x; this.y = y; }
-    add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
-    sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
-    mult(s) { return new Vec2(this.x * s, this.y * s); }
-    mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
-    normalize() {
-        let m = this.mag();
-        return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m);
-    }
-    rotate(angle) {
-        return new Vec2(
-            this.x * Math.cos(angle) - this.y * Math.sin(angle),
-            this.x * Math.sin(angle) + this.y * Math.cos(angle)
-        );
-    }
-    dot(v) { return this.x * v.x + this.y * v.y; }
-}
-
-function rectIntersect(r1, r2) {
-    return !(r2.x > r1.x + r1.w || 
-             r2.x + r2.w < r1.x || 
-             r2.y > r1.y + r1.h || 
-             r2.y + r2.h < r1.y);
-}
-
-function castRay(start, dir, walls) {
-    let closest = null;
-    let minDist = Infinity;
-    let hitNormal = null;
-    let end = start.add(dir.mult(3000)); 
-
-    for (let wall of walls) {
-        const lines = [
-            { p1: new Vec2(wall.x, wall.y), p2: new Vec2(wall.x + wall.w, wall.y), n: new Vec2(0, -1) },
-            { p1: new Vec2(wall.x, wall.y + wall.h), p2: new Vec2(wall.x + wall.w, wall.y + wall.h), n: new Vec2(0, 1) },
-            { p1: new Vec2(wall.x, wall.y), p2: new Vec2(wall.x, wall.y + wall.h), n: new Vec2(-1, 0) },
-            { p1: new Vec2(wall.x + wall.w, wall.y), p2: new Vec2(wall.x + wall.w, wall.y + wall.h), n: new Vec2(1, 0) }
-        ];
-
-        for (let line of lines) {
-            const x1 = line.p1.x, y1 = line.p1.y;
-            const x2 = line.p2.x, y2 = line.p2.y;
-            const x3 = start.x, y3 = start.y;
-            const x4 = end.x, y4 = end.y;
-
-            const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-            if (den === 0) continue;
-
-            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
-            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
-
-            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-                const hitX = x1 + t * (x2 - x1);
-                const hitY = y1 + t * (y2 - y1);
-                const dist = Math.sqrt((hitX - start.x) ** 2 + (hitY - start.y) ** 2);
-
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = new Vec2(hitX, hitY);
-                    hitNormal = line.n;
-                }
-            }
-        }
-    }
-    return closest ? { pos: closest, normal: hitNormal, dist: minDist } : null;
-}
-
-/**
- * GAME CLASSES
- */
-
-class Camera {
-    constructor(x, y) {
-        this.pos = new Vec2(x, y);
-        this.lerpedPlayerPos = new Vec2(x, y); 
-        const scaleFactor = canvas.height / WORLD_H;
-        this.zoom = CONFIG.ZOOM * scaleFactor;
-    }
-
-    follow(playerPos, screenMouse, canvas, ghostData, portals, isSpaceHeld) {
-        const playerLerp = 0.15; 
-        this.lerpedPlayerPos.x += (playerPos.x - this.lerpedPlayerPos.x) * playerLerp;
-        this.lerpedPlayerPos.y += (playerPos.y - this.lerpedPlayerPos.y) * playerLerp;
-        
-        let targetX, targetY;
-        
-        const scaleFactor = canvas.height / WORLD_H;
-        let targetZoom = CONFIG.ZOOM * scaleFactor;
-
-        if (isSpaceHeld && portals && portals[0].active && portals[1].active) {
-            const p1 = portals[0].pos;
-            const p2 = portals[1].pos;
-
-            targetX = (p1.x + p2.x) / 2;
-            targetY = (p1.y + p2.y) / 2;
-
-            const portalWidth = CONFIG.PORTAL_WIDTH;
-            const margin = 50; 
-            const minBounds = 200;
-            const boundsW = Math.max(minBounds, Math.abs(p1.x - p2.x) + portalWidth + margin * 2);
-            const boundsH = Math.max(minBounds, Math.abs(p1.y - p2.y) + portalWidth + margin * 2);
-
-            const zoomX = canvas.width / boundsW;
-            const zoomY = canvas.height / boundsH;
-
-            const maxZ = CONFIG.ZOOM * scaleFactor;
-            const minZ = 0.5 * scaleFactor;
-            targetZoom = Math.max(minZ, Math.min(maxZ, Math.min(zoomX, zoomY)));
-
-        } else {
-            let centerX = canvas.width / 2;
-            let centerY = canvas.height / 2;
-            
-            let offX = (screenMouse.x - centerX) / this.zoom;
-            let offY = (screenMouse.y - centerY) / this.zoom;
-
-            const aspect = canvas.width / canvas.height;
-            offY *= aspect * 2.2;
-
-            let mouseWorldX = this.pos.x + offX;
-            let mouseWorldY = this.pos.y + offY;
-
-            const look = CONFIG.CAM_LOOKAHEAD;
-            const wPlayer = 1.0 - look;
-            const wMouse = look;
-            
-            let wGhost = 0;
-            let ghostX = 0;
-            let ghostY = 0;
-
-            const totalWeight = wPlayer + wMouse + wGhost;
-
-            targetX = (this.lerpedPlayerPos.x * wPlayer + mouseWorldX * wMouse + ghostX * wGhost) / totalWeight;
-            targetY = (this.lerpedPlayerPos.y * wPlayer + mouseWorldY * wMouse + ghostY * wGhost) / totalWeight;
-        }
-
-        this.pos.x += (targetX - this.pos.x) * CONFIG.CAM_LERP;
-        this.pos.y += (targetY - this.pos.y) * CONFIG.CAM_LERP;
-        this.zoom += (targetZoom - this.zoom) * 0.05;
-
-        let viewH_W = (canvas.width / this.zoom) / 2;
-        let viewH_H = (canvas.height / this.zoom) / 2;
-        
-        this.pos.x = Math.max(viewH_W, Math.min(WORLD_W - viewH_W, this.pos.x));
-        this.pos.y = Math.max(viewH_H, Math.min(WORLD_H - viewH_H, this.pos.y));
-    }
-    
-    apply(ctx, canvas) {
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(this.zoom, this.zoom);
-        ctx.translate(-this.pos.x, -this.pos.y);
-    }
-
-    screenToWorld(screenPos, canvas) {
-        let centerX = canvas.width / 2;
-        let centerY = canvas.height / 2;
-        return new Vec2(
-            (screenPos.x - centerX) / this.zoom + this.pos.x,
-            (screenPos.y - centerY) / this.zoom + this.pos.y
-        );
-    }
-}
-
-class Portal {
-    constructor(id, color) {
-        this.id = id;
-        this.color = color;
-        this.active = false;
-        this.pos = new Vec2(0, 0);
-        this.normal = new Vec2(0, 0);
-        this.width = CONFIG.PORTAL_WIDTH;
-    }
-
-    place(pos, normal) {
-        this.active = true;
-        this.pos = pos;
-        this.normal = normal;
-    }
-    
-    getAngle() {
-        return Math.atan2(this.normal.y, this.normal.x);
-    }
-}
-
-class Player {
-    constructor(x, y) {
-        this.pos = new Vec2(x, y);
-        this.vel = new Vec2(0, 0);
-        this.size = CONFIG.PLAYER_SIZE;
-        this.grounded = false;
-        this.portalCooldown = 0;
-        this.controlLockTimer = 0; 
-    }
-
-    getCenter() {
-        return new Vec2(this.pos.x + this.size / 2, this.pos.y + this.size / 2);
-    }
-    
-    getGhostPos(portals) {
-        if (!portals || !portals[0].active || !portals[1].active) return null;
-        
-        const center = this.getCenter();
-        let nearPortal = null;
-        let destPortal = null;
-        let dist = 0;
-
-        const detectionRadius = 450; 
-
-        const dist0 = center.sub(portals[0].pos).mag();
-        const dist1 = center.sub(portals[1].pos).mag();
-
-        if (dist0 < detectionRadius) {
-            nearPortal = portals[0];
-            destPortal = portals[1];
-            dist = dist0;
-        } else if (dist1 < detectionRadius) {
-            nearPortal = portals[1];
-            destPortal = portals[0];
-            dist = dist1;
-        }
-
-        if (nearPortal && destPortal) {
-            const tangentIn = new Vec2(-nearPortal.normal.y, nearPortal.normal.x);
-            const tangentOut = new Vec2(-destPortal.normal.y, destPortal.normal.x);
-            let offsetV = center.sub(nearPortal.pos);
-            
-            const offsetAlongNormal = offsetV.dot(nearPortal.normal);
-            const offsetAlongTangent = offsetV.dot(tangentIn);
-            
-            const newOffsetNormal = destPortal.normal.mult(-offsetAlongNormal);
-            const newOffsetTangent = tangentOut.mult(offsetAlongTangent);
-            
-            let newOffset = newOffsetNormal.add(newOffsetTangent);
-            
-            let strength = Math.max(0, 1 - (dist / detectionRadius));
-            strength = strength * strength; 
-
-            return { 
-                pos: destPortal.pos.add(newOffset), 
-                strength: strength 
-            };
-        }
-        return null;
-    }
-
-    update(input, walls, portals) {
-        const velBeforeWalking = new Vec2(this.vel.x, this.vel.y);
-        
-        if (this.controlLockTimer > 0) {
-            this.controlLockTimer--;
-        }
-
-        let wishDir = 0;
-        if (this.controlLockTimer <= 0) {
-        if (input.keys['a']) wishDir -= 1;
-        if (input.keys['d']) wishDir += 1;
-        }
-
-        const absVelX = Math.abs(this.vel.x);
-        const velRatio = Math.min(1.0, absVelX / CONFIG.MAX_SPEED); 
-        
-        let groundRetention;
-        if (this.grounded) {
-            groundRetention = CONFIG.LOW_SPEED_GROUND_RETENTION + 
-                           (CONFIG.HIGH_SPEED_GROUND_RETENTION - CONFIG.LOW_SPEED_GROUND_RETENTION) * velRatio;
-        }
-        
-        if (this.grounded) {
-            this.vel.x *= groundRetention;
-        }
-        
-        this.vel.y += CONFIG.GRAVITY;
-
-        if (wishDir !== 0) {
-            const baseRetention = CONFIG.LOW_SPEED_GROUND_RETENTION;
-            const groundAccel = CONFIG.MOVE_SPEED * (1 - baseRetention);
-            
-            let airAccel;
-            if (!this.grounded) {
-                airAccel = CONFIG.MAX_AIR_ACCEL - 
-                          (CONFIG.MAX_AIR_ACCEL - CONFIG.MIN_AIR_ACCEL) * velRatio;
-            }
-            
-            const currentAccel = this.grounded ? groundAccel : airAccel;
-            const maxMove = CONFIG.MOVE_SPEED;
-            let currentSpeed = this.vel.x * wishDir;
-            let addSpeed = maxMove - currentSpeed;
-            if (addSpeed > 0) {
-                let accelMagnitude = Math.min(currentAccel, addSpeed);
-                this.vel.x += accelMagnitude * wishDir;
-            }
-        }
-        
-        if (input.keys['w'] && this.grounded) {
-            this.vel.y = -CONFIG.JUMP_FORCE;
-            this.grounded = false;
-        }
-        
-        this.vel.x = Math.max(-CONFIG.MAX_SPEED, Math.min(CONFIG.MAX_SPEED, this.vel.x));
-        this.vel.y = Math.max(-CONFIG.MAX_SPEED, Math.min(CONFIG.MAX_SPEED, this.vel.y));
-
-        if (this.portalCooldown > 0) this.portalCooldown--;
-        this.grounded = false;
-
-        const dt = 1 / CONFIG.SUBSTEPS;
-        for (let i = 0; i < CONFIG.SUBSTEPS; i++) {
-            this.pos.x += this.vel.x * dt;
-            this.pos.y += this.vel.y * dt;
-            this.handlePortals(portals);
-            this.handleCollisions(walls, portals);
-        }
-    }
-
-    handleCollisions(walls, portals) {
-        for (let wall of walls) {
-            let ignoreWall = false;
-            if (portals && portals[0].active && portals[1].active) {
-                for (let p of portals) {
-                    
-                    const center = this.getCenter();
-                    const rel = center.sub(p.pos);
-                    const tangent = new Vec2(-p.normal.y, p.normal.x);
-                    const distTangent = rel.dot(tangent);
-                    
-                    if (Math.abs(distTangent) < p.width / 2) {
-                         if (rel.mag() < this.size * 2) {
-                            if (p.pos.x >= wall.x - 1 && p.pos.x <= wall.x + wall.w + 1 &&
-                                p.pos.y >= wall.y - 1 && p.pos.y <= wall.y + wall.h + 1) {
-                                ignoreWall = true;
-                                break;
-                            }
-                         }
-                    }
-                }
-            }
-
-            if (ignoreWall) continue;
-
-            if (this.pos.x < wall.x + wall.w &&
-                this.pos.x + this.size > wall.x &&
-                this.pos.y < wall.y + wall.h &&
-                this.pos.y + this.size > wall.y) {
-
-                let overlapX1 = (wall.x + wall.w) - this.pos.x;
-                let overlapX2 = (this.pos.x + this.size) - wall.x;
-                let overlapY1 = (wall.y + wall.h) - this.pos.y;
-                let overlapY2 = (this.pos.y + this.size) - wall.y;
-                let minOverlap = Math.min(overlapX1, overlapX2, overlapY1, overlapY2);
-
-                if (minOverlap === overlapY1) {
-                    this.pos.y = wall.y + wall.h;
-                    this.vel.y = 0;
-                } else if (minOverlap === overlapY2) {
-                    this.pos.y = wall.y - this.size;
-                    this.vel.y = 0;
-                    this.grounded = true;
-                } else if (minOverlap === overlapX1) {
-                    this.pos.x = wall.x + wall.w;
-                    this.vel.x = 0;
-                } else if (minOverlap === overlapX2) {
-                    this.pos.x = wall.x - this.size;
-                    this.vel.x = 0;
-                }
-            }
-        }
-    }
-
-    handlePortals(portals) {
-        if (this.portalCooldown > 0) return;
-        const p1 = portals[0];
-        const p2 = portals[1];
-        if (!p1.active || !p2.active) return;
-        
-        this.applyPortalSuction(p1);
-        this.applyPortalSuction(p2);
-        
-        this.checkPortalIntersection(p1, p2);
-        this.checkPortalIntersection(p2, p1);
-    }
-
-    applyPortalSuction(portal) {
-        const center = this.getCenter();
-        const speed = this.vel.mag();
-
-        const MIN_SPEED = 5;        
-        const SUCTION_RANGE = 150;  
-
-        if (speed < MIN_SPEED) return;
-
-        const predictTime = CONFIG.PORTAL_SUCTION_PREDICT_TIME;
-        const predictedPos = center.add(this.vel.mult(predictTime * 60)); 
-        const predictedDist = predictedPos.sub(portal.pos).mag();
-        
-        if (predictedDist >= SUCTION_RANGE) return;
-        
-        const toPortal = center.sub(portal.pos);
-        const distNormal = toPortal.dot(portal.normal);
-        
-        if (distNormal >= 0) return; 
-        
-        const velAlongNormal = this.vel.dot(portal.normal);
-        
-        const MIN_ALIGNMENT = 0.3; 
-        const alignmentRatio = -velAlongNormal / speed; 
-        
-        if (alignmentRatio > MIN_ALIGNMENT) {
-            const tangent = new Vec2(-portal.normal.y, portal.normal.x);
-            const offsetTangent = predictedPos.sub(portal.pos).dot(tangent);
-            
-            const correctionDir = tangent.mult(-Math.sign(offsetTangent));
-            
-            const proximityFactor = (1 - (predictedDist / SUCTION_RANGE)) ** 2; 
-            const alignmentFactor = Math.min(1.0, alignmentRatio / 0.7); 
-            
-            const speedFactor = speed * CONFIG.PORTAL_SUCTION_SPEED_SCALE;
-            
-            const suctionForce = CONFIG.PORTAL_SUCTION * proximityFactor * alignmentFactor * speedFactor;
-            
-            this.vel = this.vel.add(correctionDir.mult(suctionForce));
-        }
-    }
-
-    checkPortalIntersection(inPortal, outPortal) {
-        const playerCenter = this.getCenter();
-        const toPlayer = playerCenter.sub(inPortal.pos);
-        const tangent = new Vec2(-inPortal.normal.y, inPortal.normal.x); 
-        const distNormal = toPlayer.dot(inPortal.normal);
-        const distTangent = toPlayer.dot(tangent);
-
-        if (Math.abs(distTangent) < inPortal.width / 2) {
-            const prevPos = this.pos.sub(this.vel.mult(1/CONFIG.SUBSTEPS));
-            const prevCenter = new Vec2(prevPos.x + this.size/2, prevPos.y + this.size/2);
-            const prevDistNormal = prevCenter.sub(inPortal.pos).dot(inPortal.normal);
-
-            if (prevDistNormal > 0 && distNormal <= 0) {
-                this.teleport(inPortal, outPortal);
-            }
-        }
-    }
-
-    teleport(inPortal, outPortal) {
-        const tangentIn = new Vec2(-inPortal.normal.y, inPortal.normal.x);
-        const tangentOut = new Vec2(-outPortal.normal.y, outPortal.normal.x);
-        
-        const velAlongNormal = this.vel.dot(inPortal.normal);
-        const velAlongTangent = this.vel.dot(tangentIn);
-        
-        const newVelNormal = outPortal.normal.mult(-velAlongNormal);
-        
-        const redirectFactor = CONFIG.PORTAL_REDIRECT;
-        const newVelTangent = tangentOut.mult(velAlongTangent * (1.0 - redirectFactor));
-        
-        let exitVel = newVelNormal.add(newVelTangent);
-        
-        this.vel = exitVel;
-
-        let playerCenter = this.getCenter();
-        let offsetV = playerCenter.sub(inPortal.pos);
-        
-        offsetV = offsetV.mult(0.2);
-        
-        const offsetAlongNormal = offsetV.dot(inPortal.normal);
-        const offsetAlongTangent = offsetV.dot(tangentIn);
-        const newOffsetNormal = outPortal.normal.mult(-offsetAlongNormal);
-        const newOffsetTangent = tangentOut.mult(offsetAlongTangent);
-        let newOffset = newOffsetNormal.add(newOffsetTangent);
-
-        const currentSpeedSq = this.vel.mag() ** 2;
-        const energyCorrection = 0; 
-        let newSpeedSq = currentSpeedSq + energyCorrection;
-        if (newSpeedSq < 0) newSpeedSq = 0;
-        const newSpeed = Math.sqrt(newSpeedSq);
-        if (this.vel.mag() > 0) {
-             this.vel = this.vel.normalize().mult(newSpeed);
-        }
-        
-        const minExitSpeed = 3; 
-        if (this.vel.mag() < minExitSpeed) {
-            this.vel = outPortal.normal.mult(minExitSpeed);
-        }
-        
-        let newCenter = outPortal.pos.add(newOffset);
-        
-        if (!isFinite(newCenter.x) || !isFinite(newCenter.y)) {
-            return;
-        }
-        
-        this.pos.x = newCenter.x - this.size/2;
-        this.pos.y = newCenter.y - this.size/2;
-        this.portalCooldown = 2;
-        
-        const currentSpeed = this.vel.mag();
-        const speedFactor = Math.max(0, 1.0 - (currentSpeed / CONFIG.CONTROL_LOCK_SPEED_THRESHOLD));
-        const lockTime = CONFIG.MAX_CONTROL_LOCK_TIME * speedFactor;
-        
-        this.controlLockTimer = Math.floor(lockTime * 60); 
-    }
-
-    draw(ctx, portals) {
-        this.drawBody(ctx, this.pos.x, this.pos.y);
-
-        const ghostData = this.getGhostPos(portals);
-        if (ghostData) {
-            ctx.save();
-            let visOpacity = Math.max(0, (ghostData.strength - 0.7) * 3.33);
-            if (visOpacity > 0) {
-                ctx.globalAlpha = 0.6 * visOpacity;
-                this.drawBody(ctx, ghostData.pos.x - this.size/2, ghostData.pos.y - this.size/2);
-            }
-            ctx.restore();
-        }
-    }
-
-    drawBody(ctx, x, y) {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x, y, this.size, this.size);
-        ctx.fillStyle = '#000';
-        let lookDir = this.vel.mag() > 1 ? this.vel.normalize() : new Vec2(1, 0);
-        ctx.fillRect(x + this.size/2 + lookDir.x * 6 - 2, y + this.size/2 + lookDir.y * 6 - 2, 4, 4);
-    }
-}
-
-/**
- * MAIN GAME LOOP & STATE
- */
-const canvas = document.getElementById('gameCanvas');
-const container = document.getElementById('game-container');
-const ctx = canvas.getContext('2d');
-
-let width, height;
-const input = {
-    keys: {},
-    screenMouse: new Vec2(0, 0)
-};
-
-let player, camera;
-let walls = [];
-let portals = [];
-let particles = [];
-let bullets = [];
-let isPaused = false;
-let inMenu = true; // Start in menu
-
-class Bullet {
-    constructor(startPos, dir, color, portalId) {
-        this.pos = startPos;
-        this.vel = dir.mult(40); // High speed
-        this.color = color;
-        this.portalId = portalId;
-        this.life = 100; // Failsafe
-        this.trail = [];
-        this.trailLength = 5;
-    }
-
-    update(walls) {
-        this.life--;
-        if (this.life <= 0) return false;
-
-        // Update trail
-        this.trail.unshift(new Vec2(this.pos.x, this.pos.y));
-        if (this.trail.length > this.trailLength) {
-            this.trail.pop();
-        }
-
-        // Move and check collision
-        const nextPos = this.pos.add(this.vel);
-        const hit = castRay(this.pos, this.vel.normalize(), walls);
-        
-        // Check if we hit something in this frame
-        if (hit) {
-            const distToHit = Math.sqrt(Math.pow(hit.pos.x - this.pos.x, 2) + Math.pow(hit.pos.y - this.pos.y, 2));
-            const distToNext = this.vel.mag();
-            
-            if (distToHit <= distToNext) {
-                // Hit wall!
-                createPortal(this.portalId, hit.pos, hit.normal);
-                soundManager.playLand(); // Play land sound
-                
-                // Spawn particles
-                for (let i = 0; i < 10; i++) {
-                    particles.push({
-                        pos: hit.pos.add(hit.normal.mult(2)),
-                        vel: new Vec2((Math.random() - 0.5) * 5 + hit.normal.x * 5, (Math.random() - 0.5) * 5 + hit.normal.y * 5),
-                        life: 30, // Lasts 0.5 seconds
-                        color: this.color
-                    });
-                }
-                return false; // Destroy bullet
-            }
-        }
-
-        this.pos = nextPos;
-        return true;
-    }
-
-    draw(ctx) {
-        // Draw trail
-        if (this.trail.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(this.trail[0].x, this.trail[0].y);
-            for (let i = 1; i < this.trail.length; i++) {
-                ctx.lineTo(this.trail[i].x, this.trail[i].y);
-            }
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.globalAlpha = 0.6;
-            ctx.stroke();
-            ctx.globalAlpha = 1.0;
-        }
-
-        // Draw head
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-function createPortal(id, pos, normal) {
-    portals[id].active = true;
-    portals[id].pos = pos;
-    portals[id].normal = normal;
-    portals[id].width = CONFIG.PORTAL_WIDTH; 
-}
-
-function togglePause() {
-    if (inMenu) return; // Can't pause in main menu
-    isPaused = !isPaused;
-    const ui = document.getElementById('ui');
-    if (isPaused) {
-        ui.classList.add('paused');
-    } else {
-        ui.classList.remove('paused');
-    }
-}
-
-function startGame() {
-    inMenu = false;
-    document.getElementById('main-menu').classList.add('hidden');
-    soundManager.init(); // Start audio on user gesture
-    resetLevel();
-}
-
-function resize() {
-    const aspect = 16 / 9;
-    let w = window.innerWidth;
-    let h = window.innerHeight;
-    
-    if (w / h > aspect) {
-        w = h * aspect;
-    } else {
-        h = w / aspect;
-    }
-    
-    container.style.width = w + 'px';
-    container.style.height = h + 'px';
-    canvas.width = w;
-    canvas.height = h;
-}
-
-function resetLevel() {
-    player = new Player(300, WORLD_H - 100);
-    camera = new Camera(player.pos.x, player.pos.y); 
-    portals = [new Portal(0, '#00A2FF'), new Portal(1, '#FF9900')];
-    bullets = []; // Clear bullets on reset
-    particles = []; // Clear particles
-    
-    walls = [
-        {x: 0, y: 0, w: WORLD_W, h: 40}, 
-        {x: 0, y: WORLD_H-40, w: WORLD_W, h: 40}, 
-        {x: 0, y: 0, w: 40, h: WORLD_H}, 
-        {x: WORLD_W-40, y: 0, w: 40, h: WORLD_H}, 
-        
-        {x: 200, y: WORLD_H - 250, w: 200, h: 20},
-        {x: 700, y: WORLD_H - 500, w: 40, h: 500},
-        {x: 800, y: 300, w: 400, h: 40},
-        {x: 150, y: 400, w: 150, h: 20},
-        
-        {x: WORLD_W - 400, y: WORLD_H - 150, w: 60, h: 110},
-        {x: WORLD_W - 340, y: WORLD_H - 250, w: 60, h: 210},
-        {x: WORLD_W - 280, y: WORLD_H - 350, w: 60, h: 310},
-    ];
-}
-
-function init() {
-    resize();
-    window.addEventListener('resize', resize);
-    
-    window.addEventListener('keydown', e => {
-        const key = e.key.toLowerCase();
-        if (key === 'escape') {
-            e.preventDefault();
-            e.stopPropagation();
-            togglePause();
-            return;
-        }
-        
-        if (!isPaused && !inMenu) {
-            if (key === 'q') shootPortal(0);
-            if (key === 'e') shootPortal(1);
-        }
-        
-        input.keys[key] = true;
-    });
-    window.addEventListener('keyup', e => input.keys[e.key.toLowerCase()] = false);
-    window.addEventListener('blur', () => {
-        input.keys = {};
-    });
-
-    window.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        let mx = e.clientX - rect.left;
-        let my = e.clientY - rect.top;
-        // Clamp to canvas dimensions to avoid black bar drift
-        input.screenMouse.x = Math.max(0, Math.min(canvas.width, mx));
-        input.screenMouse.y = Math.max(0, Math.min(canvas.height, my));
-    });
-    
-    window.addEventListener('contextmenu', e => e.preventDefault());
-
-    document.getElementById('resumeBtn').addEventListener('click', () => {
-        if (isPaused) togglePause();
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-        resetLevel();
-        if (isPaused) togglePause(); 
-    });
-
-    // Main Menu Start Button
-    document.getElementById('startBtn').addEventListener('click', startGame);
-
-    resetLevel();
-    requestAnimationFrame(loop);
-}
-
-function isPointInWall(point, walls) {
-    for (let wall of walls) {
-        if (point.x >= wall.x && point.x <= wall.x + wall.w &&
-            point.y >= wall.y && point.y <= wall.y + wall.h) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function shootPortal(id) {
-    if (inMenu) return;
-    
-    const worldMouse = camera.screenToWorld(input.screenMouse, canvas);
-    const playerCenter = new Vec2(player.pos.x + player.size/2, player.pos.y + player.size/2);
-    
-    const dir = worldMouse.sub(playerCenter).normalize();
-    let anchorPoint = playerCenter.add(dir.mult(CONFIG.PORTAL_ANCHOR_DISTANCE));
-    
-    if (isPointInWall(anchorPoint, walls)) {
-        anchorPoint = playerCenter;
-    }
-    
-    bullets.push(new Bullet(anchorPoint, dir, portals[id].color, id));
-    soundManager.playShoot(); // Play shoot sound
-}
-
-function update() {
-    if (isPaused || inMenu) return;
-    
-    player.update(input, walls, portals);
-    const ghostData = player.getGhostPos(portals);
-    camera.follow(player.getCenter(), input.screenMouse, canvas, ghostData, portals, input.keys[' ']);
-    
-    // Update bullets
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        if (!bullets[i].update(walls)) {
-            bullets.splice(i, 1);
-        }
-    }
-    
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.pos = p.pos.add(p.vel);
-        p.life--;
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-}
-
-function drawPortalPreview(ctx, pos, normal) {
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    const angle = Math.atan2(normal.y, normal.x);
-    ctx.rotate(angle);
-    
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, -CONFIG.PORTAL_WIDTH/2, 3, CONFIG.PORTAL_WIDTH);
-    
-    ctx.restore();
-}
-
-function draw() {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Even if in menu, we can draw the game background for style, 
-    // but maybe just keep it black or draw it static.
-    // Let's draw it active but paused-looking if in menu
-    
-    ctx.save();
-    
-    camera.apply(ctx, canvas);
-
-    ctx.fillStyle = '#222';
-    ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-    
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(let x=0; x<=WORLD_W; x+=100) { ctx.moveTo(x,0); ctx.lineTo(x, WORLD_H); }
-    for(let y=0; y<=WORLD_H; y+=100) { ctx.moveTo(0,y); ctx.lineTo(WORLD_W, y); }
-    ctx.stroke();
-    
-    ctx.fillStyle = '#444';
-    for (let w of walls) {
-        ctx.fillRect(w.x, w.y, w.w, w.h);
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(w.x, w.y, w.w, w.h);
-    }
-    
-    for (let p of portals) {
-        if (p.active) {
-            ctx.save();
-            ctx.translate(p.pos.x, p.pos.y);
-            ctx.rotate(p.getAngle());
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = p.color;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(0, -p.width/2, 4, p.width); 
-            ctx.fillStyle = '#000';
-            ctx.fillRect(-2, -p.width/2 + 2, 2, p.width - 4);
-            ctx.restore();
-        }
-    }
-    
-    // Draw bullets
-    for (let bullet of bullets) {
-        bullet.draw(ctx);
-    }
-    
-    const worldMouse = camera.screenToWorld(input.screenMouse, canvas);
-    const playerCenter = new Vec2(player.pos.x + player.size/2, player.pos.y + player.size/2);
-    
-    // Calculate direction from player to mouse
-    const dirToMouse = worldMouse.sub(playerCenter).normalize();
-    
-    // Calculate anchor point offset from player center in direction of mouse
-    let anchorPoint = playerCenter.add(dirToMouse.mult(CONFIG.PORTAL_ANCHOR_DISTANCE));
-    
-    // If anchor point is inside a wall, use player center instead
-    if (isPointInWall(anchorPoint, walls)) {
-        anchorPoint = playerCenter;
-    }
-    
-    // Cast ray from anchor point to mouse direction to find first wall hit
-    const rayHit = castRay(anchorPoint, dirToMouse, walls);
-    
-    // Use hit point if found, otherwise extend far in that direction
-    const lineEnd = rayHit ? rayHit.pos : anchorPoint.add(dirToMouse.mult(5000));
-
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 2;
-    ctx.moveTo(anchorPoint.x, anchorPoint.y);
-    ctx.lineTo(lineEnd.x, lineEnd.y);
-    ctx.stroke();
-    
-    if (!inMenu) {
-        ctx.beginPath();
-        ctx.arc(worldMouse.x, worldMouse.y, 5, 0, Math.PI*2);
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
-    }
-    
-    for (let p of particles) {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.pos.x, p.pos.y, 3, 3);
-    }
-    
-    player.draw(ctx, portals);
-
-    ctx.restore();
-    
-    if (!inMenu) {
-        drawPortalEdgeIndicators(ctx, canvas, camera, portals);
-        drawPlayerEdgeIndicator(ctx, canvas, camera, player);
-    }
-}
-
-function drawPortalEdgeIndicators(ctx, canvas, camera, portals) {
-    const viewHalfW = (canvas.width / camera.zoom) / 2;
-    const viewHalfH = (canvas.height / camera.zoom) / 2;
-    
-    const edgeMargin = 20; 
-    const indicatorSize = 30;
-    
-    for (let portal of portals) {
-        if (!portal.active) continue;
-        
-        const portalX = portal.pos.x;
-        const portalY = portal.pos.y;
-        
-        const screenCenterX = canvas.width / 2;
-        const screenCenterY = canvas.height / 2;
-        const portalScreenX = screenCenterX + (portalX - camera.pos.x) * camera.zoom;
-        const portalScreenY = screenCenterY + (portalY - camera.pos.y) * camera.zoom;
-        
-        const isOutside = portalScreenX < 0 || portalScreenX > canvas.width || 
-                         portalScreenY < 0 || portalScreenY > canvas.height;
-        
-        if (!isOutside) continue; 
-        
-        const minX = edgeMargin;
-        const maxX = canvas.width - edgeMargin;
-        const minY = edgeMargin;
-        const maxY = canvas.height - edgeMargin;
-        
-        let screenX = Math.max(minX, Math.min(maxX, portalScreenX));
-        let screenY = Math.max(minY, Math.min(maxY, portalScreenY));
-        
-        let angle = Math.atan2(portalScreenY - screenY, portalScreenX - screenX);
-        
-        ctx.save();
-        ctx.translate(screenX, screenY);
-        ctx.rotate(angle);
-        
-        const color = portal.color;
-        const r = parseInt(color.slice(1, 3), 16);
-        const g = parseInt(color.slice(3, 5), 16);
-        const b = parseInt(color.slice(5, 7), 16);
-        
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
-        ctx.strokeStyle = portal.color; 
-        ctx.lineWidth = 3; 
-        
-        ctx.beginPath();
-        ctx.moveTo(indicatorSize, 0);
-        ctx.lineTo(-indicatorSize/2, -indicatorSize/2);
-        ctx.lineTo(-indicatorSize/2, indicatorSize/2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = portal.color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        ctx.restore();
-    }
-}
-
-function drawPlayerEdgeIndicator(ctx, canvas, camera, player) {
-    const viewHalfW = (canvas.width / camera.zoom) / 2;
-    const viewHalfH = (canvas.height / camera.zoom) / 2;
-    
-    const playerCenter = player.getCenter();
-    const playerX = playerCenter.x;
-    const playerY = playerCenter.y;
-    
-    const screenCenterX = canvas.width / 2;
-    const screenCenterY = canvas.height / 2;
-    const playerScreenX = screenCenterX + (playerX - camera.pos.x) * camera.zoom;
-    const playerScreenY = screenCenterY + (playerY - camera.pos.y) * camera.zoom;
-    
-    const isOutside = playerScreenX < 0 || playerScreenX > canvas.width || 
-                     playerScreenY < 0 || playerScreenY > canvas.height;
-    
-    if (!isOutside) return; 
-    
-    const edgeMargin = 20; 
-    const indicatorSize = 35; 
-    
-    const minX = edgeMargin;
-    const maxX = canvas.width - edgeMargin;
-    const minY = edgeMargin;
-    const maxY = canvas.height - edgeMargin;
-    
-    let screenX = Math.max(minX, Math.min(maxX, playerScreenX));
-    let screenY = Math.max(minY, Math.min(maxY, playerScreenY));
-    
-    let angle = Math.atan2(playerScreenY - screenY, playerScreenX - screenX);
-    
-    ctx.save();
-    ctx.translate(screenX, screenY);
-    ctx.rotate(angle);
-    
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; 
-    ctx.strokeStyle = '#fff'; 
-    ctx.lineWidth = 3; 
-    
-    ctx.beginPath();
-    ctx.moveTo(indicatorSize, 0);
-    ctx.lineTo(-indicatorSize/2, -indicatorSize/2);
-    ctx.lineTo(-indicatorSize/2, indicatorSize/2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#fff';
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    
-    ctx.restore();
-}
-
-let lastTime = 0;
-let accumulator = 0;
-const FIXED_STEP = 1 / 60; 
-
-function loop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    
-    let deltaTime = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-    
-    if (deltaTime > 0.1) deltaTime = 0.1;
-    
-    accumulator += deltaTime;
-    
-    while (accumulator >= FIXED_STEP) {
-        update();
-        accumulator -= FIXED_STEP;
-    }
-    
-    draw();
-    requestAnimationFrame(loop);
-}
-
-init();
-
-</script>
 </body>
 </html>
