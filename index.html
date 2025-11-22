@@ -717,9 +717,8 @@ class Player {
     handleCollisions(walls, portals) {
         for (let wall of walls) {
             let ignoreWall = false;
-            if (portals) {
+            if (portals && portals[0].active && portals[1].active) {
                 for (let p of portals) {
-                    if (!p.active) continue;
                     
                     const center = this.getCenter();
                     const rel = center.sub(p.pos);
